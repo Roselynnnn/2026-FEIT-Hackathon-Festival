@@ -50,7 +50,6 @@ export function describeRoad(properties: RoadProperties) {
     ["Direction", direction],
     ["Surface", properties.surface],
     ["Road class", properties.highway],
-    ["Last mapped", properties.last_updated],
   ]
     .filter(
       (field): field is [string, string] => field[1] != null && field[1] !== "",
