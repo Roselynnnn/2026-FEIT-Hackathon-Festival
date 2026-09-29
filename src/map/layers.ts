@@ -1,6 +1,11 @@
 import type { Map, ExpressionSpecification } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import type { MapData, LayerVisibility, ViewMode } from "../types";
+import type {
+  MapData,
+  LayerVisibility,
+  TrafficDayType,
+  ViewMode,
+} from "../types";
 
 export const layerGroups = {
   buildings: ["buildings-2d", "buildings-3d", "building-outline"],
@@ -29,17 +34,27 @@ const statusColors: ExpressionSpecification = [
   "#e78028",
 ];
 
-function trafficValue(timeIndex: number): ExpressionSpecification {
+function trafficValue(
+  timeIndex: number,
+  dayType: TrafficDayType,
+): ExpressionSpecification {
+  const property =
+    dayType === "weekend"
+      ? "traffic_weekend_congestion_profile"
+      : "traffic_congestion_profile";
   return [
     "case",
-    ["has", "traffic_congestion_profile"],
-    ["at", timeIndex, ["get", "traffic_congestion_profile"]],
+    ["has", property],
+    ["at", timeIndex, ["array", "number", ["get", property]]],
     -1,
   ];
 }
 
-function trafficColor(timeIndex: number): ExpressionSpecification {
-  const value = trafficValue(timeIndex);
+function trafficColor(
+  timeIndex: number,
+  dayType: TrafficDayType,
+): ExpressionSpecification {
+  const value = trafficValue(timeIndex, dayType);
   return [
     "case",
     ["<", value, 0],
@@ -178,7 +193,7 @@ export function addLayers(map: Map, data: MapData) {
     type: "line",
     source: "road-lanes",
     paint: {
-      "line-color": trafficColor(32),
+      "line-color": trafficColor(32, "weekday"),
       "line-opacity": 0.92,
       "line-width": 4,
     },
@@ -201,12 +216,16 @@ export function addLayers(map: Map, data: MapData) {
   });
 }
 
-export function syncTrafficTime(map: Map, timeIndex: number) {
+export function syncTrafficTime(
+  map: Map,
+  timeIndex: number,
+  dayType: TrafficDayType,
+) {
   if (!map.getLayer("road-interaction")) return;
   map.setPaintProperty(
     "road-interaction",
     "line-color",
-    trafficColor(timeIndex),
+    trafficColor(timeIndex, dayType),
   );
 }
 

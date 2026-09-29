@@ -108,17 +108,17 @@ The migration retains the latest UI update: three layer groups, uniform blue roa
 - Development model footprints coloured by status.
 - Compact road-details panel with lane count, direction, official speed limit,
   nearby observed traffic, surface and road class where available.
-- A 15-minute weekday time slider that recolours observed roads from low
-  (green) to very high (red) relative traffic intensity.
+- A weekday/weekend selector with a 15-minute time slider that recolours
+  observed roads from low (green) to very high (red) relative traffic intensity.
 - Independent controls for building, development and road-context layers.
 
 Road colours represent relative observed traffic intensity at the selected
-time. Traffic figures are weekday averages from nearby September 2026 SCATS
-signal detectors, not a live feed and
+time. Traffic figures are weekday or weekend averages from nearby September
+2026 SCATS signal detectors, not a live feed and
 not a continuous count for the full selected road. The colour scale is a
 relative daily congestion indicator: each site's smoothed 15-minute demand is
-compared with that site's own weekday peak. Grey roads have no sufficiently
-close matching observation.
+compared with that site's own peak for the selected day type. Grey roads have
+no sufficiently close matching observation for the selected day type.
 
 ## Data scope and refresh
 

@@ -227,17 +227,11 @@ def load_scats_metrics(path: Path, site_ids: set[str]):
                         except ValueError:
                             pass
 
-    metrics = {}
-    for site, days in by_site_day.items():
-        weekday_profiles = [
-            profile
-            for day, profile in days.items()
-            if date.fromisoformat(day).weekday() < 5
-        ]
-        if not weekday_profiles:
-            continue
+    def summarise(profiles):
+        if not profiles:
+            return None
         average = [
-            round(sum(profile[index] for profile in weekday_profiles) / len(weekday_profiles))
+            round(sum(profile[index] for profile in profiles) / len(profiles))
             for index in range(96)
         ]
         smoothed = [
@@ -251,15 +245,47 @@ def load_scats_metrics(path: Path, site_ids: set[str]):
         def peak_hour(start: int, end: int) -> int:
             return max(sum(average[index : index + 4]) for index in range(start, end - 3))
 
+        return {
+            "daily": sum(average),
+            "am_peak_hour": peak_hour(24, 41),
+            "pm_peak_hour": peak_hour(60, 77),
+            "profile": average,
+            "congestion_profile": congestion,
+        }
+
+    metrics = {}
+    for site, days in by_site_day.items():
+        weekday_profiles = []
+        weekend_profiles = []
+        for day, profile in days.items():
+            target = (
+                weekday_profiles
+                if date.fromisoformat(day).weekday() < 5
+                else weekend_profiles
+            )
+            target.append(profile)
+        weekday = summarise(weekday_profiles)
+        weekend = summarise(weekend_profiles)
+        if not weekday:
+            continue
         metrics[site] = {
-            "traffic_avg_weekday_daily": sum(average),
-            "traffic_am_peak_hour": peak_hour(24, 41),
-            "traffic_pm_peak_hour": peak_hour(60, 77),
+            "traffic_avg_weekday_daily": weekday["daily"],
+            "traffic_am_peak_hour": weekday["am_peak_hour"],
+            "traffic_pm_peak_hour": weekday["pm_peak_hour"],
             "traffic_observed_weekdays": len(weekday_profiles),
             "traffic_observation_period": f"{min(days)} to {max(days)}",
-            "traffic_weekday_profile": average,
-            "traffic_congestion_profile": congestion,
+            "traffic_weekday_profile": weekday["profile"],
+            "traffic_congestion_profile": weekday["congestion_profile"],
         }
+        if weekend:
+            metrics[site].update(
+                traffic_avg_weekend_daily=weekend["daily"],
+                traffic_weekend_am_peak_hour=weekend["am_peak_hour"],
+                traffic_weekend_pm_peak_hour=weekend["pm_peak_hour"],
+                traffic_observed_weekend_days=len(weekend_profiles),
+                traffic_weekend_profile=weekend["profile"],
+                traffic_weekend_congestion_profile=weekend["congestion_profile"],
+            )
     return metrics
 
 

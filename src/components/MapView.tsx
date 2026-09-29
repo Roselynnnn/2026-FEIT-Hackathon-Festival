@@ -8,11 +8,12 @@ import type {
 } from "maplibre-gl";
 import { addLayers, syncTrafficTime, syncVisibility } from "../map/layers";
 import { TrafficTimeBar } from "./TrafficTimeBar";
-import { formatTrafficTime } from "../domain/traffic";
+import { formatTrafficTime, trafficDayLabel } from "../domain/traffic";
 import type {
   LayerVisibility,
   MapData,
   RoadProperties,
+  TrafficDayType,
   ViewMode,
 } from "../types";
 
@@ -25,7 +26,9 @@ interface Props {
   mode: ViewMode;
   layers: LayerVisibility;
   trafficTime: number;
+  trafficDayType: TrafficDayType;
   onTrafficTimeChange: (value: number) => void;
+  onTrafficDayTypeChange: (value: TrafficDayType) => void;
   onRoadSelect: (road: RoadProperties) => void;
   onRetryData: () => void;
 }
@@ -36,20 +39,34 @@ export function MapView({
   mode,
   layers,
   trafficTime,
+  trafficDayType,
   onTrafficTimeChange,
+  onTrafficDayTypeChange,
   onRoadSelect,
   onRetryData,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LibreMap | null>(null);
-  const settings = useRef({ mode, layers, trafficTime, onRoadSelect });
+  const settings = useRef({
+    mode,
+    layers,
+    trafficTime,
+    trafficDayType,
+    onRoadSelect,
+  });
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    settings.current = { mode, layers, trafficTime, onRoadSelect };
-  }, [mode, layers, trafficTime, onRoadSelect]);
+    settings.current = {
+      mode,
+      layers,
+      trafficTime,
+      trafficDayType,
+      onRoadSelect,
+    };
+  }, [mode, layers, trafficTime, trafficDayType, onRoadSelect]);
 
   useEffect(() => {
     if (!data || !container.current) return;
@@ -110,7 +127,11 @@ export function MapView({
       try {
         addLayers(map, data);
         syncVisibility(map, settings.current.mode, settings.current.layers);
-        syncTrafficTime(map, settings.current.trafficTime);
+        syncTrafficTime(
+          map,
+          settings.current.trafficTime,
+          settings.current.trafficDayType,
+        );
         setMapError(null);
         setReady(true);
       } catch (error) {
@@ -178,8 +199,8 @@ export function MapView({
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;
-    syncTrafficTime(mapRef.current, trafficTime);
-  }, [ready, trafficTime]);
+    syncTrafficTime(mapRef.current, trafficTime, trafficDayType);
+  }, [ready, trafficTime, trafficDayType]);
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;
@@ -206,7 +227,7 @@ export function MapView({
         <span id="viewLabel">
           {mode === "3d"
             ? "3D massing view • drag to rotate"
-            : `Traffic at ${formatTrafficTime(trafficTime)} • hover or click a road`}
+            : `${trafficDayLabel[trafficDayType]} traffic at ${formatTrafficTime(trafficTime)} • hover or click a road`}
         </span>
       </div>
       <div className="map-overlay traffic-legend">
@@ -231,7 +252,12 @@ export function MapView({
           No data
         </span>
       </div>
-      <TrafficTimeBar value={trafficTime} onChange={onTrafficTimeChange} />
+      <TrafficTimeBar
+        value={trafficTime}
+        onChange={onTrafficTimeChange}
+        dayType={trafficDayType}
+        onDayTypeChange={onTrafficDayTypeChange}
+      />
       {(!data || !ready) && (
         <div className="loading" role="status">
           {error ? (

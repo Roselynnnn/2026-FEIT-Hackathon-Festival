@@ -1,17 +1,41 @@
-import { formatTrafficTime, TRAFFIC_INTERVALS_PER_DAY } from "../domain/traffic";
+import {
+  formatTrafficTime,
+  TRAFFIC_INTERVALS_PER_DAY,
+} from "../domain/traffic";
+import type { TrafficDayType } from "../types";
 
 export function TrafficTimeBar({
   value,
   onChange,
+  dayType,
+  onDayTypeChange,
 }: {
   value: number;
   onChange: (value: number) => void;
+  dayType: TrafficDayType;
+  onDayTypeChange: (value: TrafficDayType) => void;
 }) {
   return (
     <div className="traffic-timebar" aria-label="Traffic time controls">
       <div className="timebar-heading">
-        <div>
-          <span>Weekday traffic</span>
+        <div className="timebar-copy">
+          <div
+            className="traffic-day-switch"
+            role="group"
+            aria-label="Traffic day type"
+          >
+            {(["weekday", "weekend"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={dayType === option ? "active" : ""}
+                aria-pressed={dayType === option}
+                onClick={() => onDayTypeChange(option)}
+              >
+                {option === "weekday" ? "Weekday" : "Weekend"}
+              </button>
+            ))}
+          </div>
           <small>Observed SCATS average • 15-minute intervals</small>
         </div>
         <strong>{formatTrafficTime(value)}</strong>

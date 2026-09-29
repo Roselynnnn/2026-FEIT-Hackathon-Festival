@@ -1,6 +1,7 @@
 import type { FeatureCollection, LineString, Geometry } from "geojson";
 
 export type ViewMode = "2d" | "3d";
+export type TrafficDayType = "weekday" | "weekend";
 export type LayerId = "buildings" | "developments" | "roads";
 export type LayerVisibility = Record<LayerId, boolean>;
 
@@ -36,6 +37,12 @@ export interface RoadProperties {
   traffic_observation_period?: string;
   traffic_weekday_profile?: number[];
   traffic_congestion_profile?: number[];
+  traffic_avg_weekend_daily?: number;
+  traffic_weekend_am_peak_hour?: number;
+  traffic_weekend_pm_peak_hour?: number;
+  traffic_observed_weekend_days?: number;
+  traffic_weekend_profile?: number[];
+  traffic_weekend_congestion_profile?: number[];
   surface?: string;
   highway?: string;
   last_updated?: string;

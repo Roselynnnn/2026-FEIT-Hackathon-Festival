@@ -319,12 +319,36 @@ h3 {
   justify-content: space-between;
   gap: 16px;
 }
-.timebar-heading span {
-  display: block;
+.timebar-copy {
+  min-width: 0;
+}
+.traffic-day-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid #d9dfe1;
+  border-radius: 7px;
+  background: #eef1f2;
+}
+.traffic-day-switch button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #59666d;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  cursor: pointer;
+}
+.traffic-day-switch button:hover {
+  color: #172126;
+}
+.traffic-day-switch button.active {
+  background: #172126;
+  color: #fff;
+  box-shadow: 0 1px 3px #17212630;
 }
 .timebar-heading small {
   display: block;

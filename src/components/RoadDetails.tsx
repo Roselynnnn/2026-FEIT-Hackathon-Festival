@@ -1,18 +1,29 @@
 import type { RoadProperties } from "../types";
+import type { TrafficDayType } from "../types";
 import { describeRoad } from "../domain/roads";
-import { describeCongestion, formatTrafficTime } from "../domain/traffic";
+import {
+  describeCongestion,
+  formatTrafficTime,
+  trafficDayLabel,
+  trafficForDay,
+} from "../domain/traffic";
 
 export function RoadDetails({
   road,
   timeIndex,
+  dayType,
 }: {
   road: RoadProperties | null;
   timeIndex: number;
+  dayType: TrafficDayType;
 }) {
   const details = road ? describeRoad(road) : null;
-  const currentVolume = road?.traffic_weekday_profile?.[timeIndex];
-  const currentCongestion = road?.traffic_congestion_profile?.[timeIndex];
+  const traffic = trafficForDay(road, dayType);
+  const currentVolume = traffic?.volumeProfile?.[timeIndex];
+  const currentCongestion = traffic?.congestionProfile?.[timeIndex];
   const congestion = describeCongestion(currentCongestion);
+  const hasTraffic = details?.traffic && traffic?.daily != null;
+  const dayLabel = trafficDayLabel[dayType];
   return (
     <aside className="sidebar right">
       <h2>Road details</h2>
@@ -41,9 +52,11 @@ export function RoadDetails({
             </div>
             <div className="data-summary traffic-summary">
               <span>Observed traffic</span>
-              {details.traffic ? (
+              {hasTraffic && details?.traffic ? (
                 <>
-                  <strong>{details.traffic.daily} vehicles/day</strong>
+                  <strong>
+                    {traffic.daily?.toLocaleString("en-AU")} vehicles/day
+                  </strong>
                   <div className={`traffic-now ${congestion.className}`}>
                     <div>
                       <small>{formatTrafficTime(timeIndex)} average</small>
@@ -57,11 +70,11 @@ export function RoadDetails({
                   <div className="traffic-peaks">
                     <div>
                       <small>AM peak hour</small>
-                      <b>{details.traffic.amPeak ?? "—"}</b>
+                      <b>{traffic.amPeak?.toLocaleString("en-AU") ?? "—"}</b>
                     </div>
                     <div>
                       <small>PM peak hour</small>
-                      <b>{details.traffic.pmPeak ?? "—"}</b>
+                      <b>{traffic.pmPeak?.toLocaleString("en-AU") ?? "—"}</b>
                     </div>
                   </div>
                   <p>
@@ -71,16 +84,23 @@ export function RoadDetails({
                       : ""}
                   </p>
                   <small>
-                    Weekday average, {details.traffic.period}. Intersection
-                    detector total—not a continuous count for the whole road.
+                    {dayLabel} average from{" "}
+                    {traffic.observedDays ?? "available"} observed days,{" "}
+                    {details.traffic.period}. Intersection detector total—not a
+                    continuous count for the whole road.
                   </small>
                 </>
               ) : (
                 <>
-                  <strong>Not observed nearby</strong>
+                  <strong>
+                    {dayType === "weekend"
+                      ? "No weekend observations"
+                      : "Not observed nearby"}
+                  </strong>
                   <p>
-                    No matching SCATS traffic-signal observation is close enough
-                    to this road segment.
+                    {dayType === "weekend" && details?.traffic
+                      ? "The matched SCATS site has no weekend observations in this reporting period."
+                      : "No matching SCATS traffic-signal observation is close enough to this road segment."}
                   </p>
                 </>
               )}
