@@ -1,0 +1,45 @@
+{
+  "centre": {
+    "name": "Queen Victoria Market",
+    "longitude": 144.9568,
+    "latitude": -37.8076
+  },
+  "radius_m": 1000,
+  "datasets": {
+    "buildings": {
+      "dataset_id": "2023-building-footprints",
+      "features": 7592,
+      "source": "https://data.melbourne.vic.gov.au/explore/dataset/2023-building-footprints/information/"
+    },
+    "roads": {
+      "dataset_id": "road-corridors",
+      "features": 931,
+      "source": "https://data.melbourne.vic.gov.au/explore/dataset/road-corridors/information/"
+    },
+    "developments": {
+      "dataset_id": "development-activity-model-footprints",
+      "features": 466,
+      "source": "https://data.melbourne.vic.gov.au/explore/dataset/development-activity-model-footprints/information/"
+    },
+    "development_points": {
+      "dataset_id": "development-activity-monitor",
+      "features": 448,
+      "source": "https://data.melbourne.vic.gov.au/explore/dataset/development-activity-monitor/information/"
+    },
+    "clue_areas": {
+      "dataset_id": "small-areas-for-census-of-land-use-and-employment-clue",
+      "features": 2,
+      "source": "https://data.melbourne.vic.gov.au/explore/dataset/small-areas-for-census-of-land-use-and-employment-clue/information/"
+    },
+    "building_info": {
+      "dataset_id": "buildings-with-name-age-size-accessibility-and-bicycle-facilities",
+      "features": 2875,
+      "source": "https://data.melbourne.vic.gov.au/explore/dataset/buildings-with-name-age-size-accessibility-and-bicycle-facilities/information/"
+    },
+    "road_lanes": {
+      "features": 2215,
+      "with_lane_count": 1004,
+      "source": "https://www.openstreetmap.org/copyright"
+    }
+  }
+}
