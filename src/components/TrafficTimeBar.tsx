@@ -36,7 +36,7 @@ export function TrafficTimeBar({
               </button>
             ))}
           </div>
-          <small>Observed SCATS average • 15-minute intervals</small>
+          <small>Observed SCATS average • modelled capacity load</small>
         </div>
         <strong>{formatTrafficTime(value)}</strong>
       </div>

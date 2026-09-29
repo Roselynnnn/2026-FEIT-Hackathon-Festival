@@ -1,6 +1,7 @@
 import type { Map, ExpressionSpecification, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { sliceRoad, type WorkRange } from "../domain/workRange";
+import { ESTIMATED_CAPACITY_PER_LANE_INTERVAL } from "../domain/traffic";
 import type {
   MapData,
   RoadFeature,
@@ -36,18 +37,29 @@ const statusColors: ExpressionSpecification = [
   "#e78028",
 ];
 
-function trafficValue(
+function capacityLoadValue(
   timeIndex: number,
   dayType: TrafficDayType,
 ): ExpressionSpecification {
   const property =
     dayType === "weekend"
-      ? "traffic_weekend_congestion_profile"
-      : "traffic_congestion_profile";
-  return [
+      ? "traffic_weekend_profile"
+      : "traffic_weekday_profile";
+  const volume: ExpressionSpecification = [
     "case",
     ["has", property],
     ["at", timeIndex, ["array", "number", ["get", property]]],
+    -1,
+  ];
+  const lanes: ExpressionSpecification = ["coalesce", ["get", "lanes_num"], 0];
+  return [
+    "case",
+    ["all", [">=", volume, 0], [">", lanes, 0]],
+    [
+      "/",
+      ["*", volume, 100],
+      ["*", lanes, ESTIMATED_CAPACITY_PER_LANE_INTERVAL],
+    ],
     -1,
   ];
 }
@@ -56,7 +68,7 @@ function trafficColor(
   timeIndex: number,
   dayType: TrafficDayType,
 ): ExpressionSpecification {
-  const value = trafficValue(timeIndex, dayType);
+  const value = capacityLoadValue(timeIndex, dayType);
   return [
     "case",
     ["<", value, 0],

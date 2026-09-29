@@ -22,7 +22,7 @@ const layerOptions: {
   {
     id: "roads",
     title: "Road corridors",
-    caption: "Colour: traffic intensity at selected time",
+    caption: "Colour: estimated capacity load",
     color: "#2c6eeb",
   },
 ];

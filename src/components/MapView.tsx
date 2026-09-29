@@ -290,7 +290,7 @@ export function MapView({
         <span id="viewLabel">
           {mode === "3d"
             ? "3D massing view • drag to rotate"
-            : `${trafficDayLabel[trafficDayType]} traffic at ${formatTrafficTime(trafficTime)} • hover or click a road`}
+            : `${trafficDayLabel[trafficDayType]} capacity load at ${formatTrafficTime(trafficTime)} • hover or click a road`}
         </span>
       </div>
       {selectedRoad && (
@@ -311,23 +311,23 @@ export function MapView({
       <div className="map-overlay traffic-legend">
         <span>
           <i style={{ background: "#2ca25f" }} />
-          Low
+          Low load
         </span>
         <span>
           <i style={{ background: "#f6d743" }} />
-          Moderate
+          Moderate load
         </span>
         <span>
           <i style={{ background: "#f28e2b" }} />
-          High
+          High load
         </span>
         <span>
           <i style={{ background: "#d73027" }} />
-          Very high
+          Near / over capacity
         </span>
         <span>
           <i style={{ background: "#87959b" }} />
-          No data
+          No estimate
         </span>
       </div>
       <TrafficTimeBar

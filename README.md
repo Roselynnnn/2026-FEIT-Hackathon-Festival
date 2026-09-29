@@ -2,9 +2,10 @@
 
 A React + TypeScript + Vite application showing the urban context around Queen Victoria Market, Melbourne, within a one-kilometre study area. MapLibre renders the 2D map and 3D building massing.
 
-This is currently a map exploration prototype with official speed-zone matches
-and nearby observed SCATS traffic summaries. Construction objects, traffic
-simulation and plan optimisation are not implemented yet.
+This is currently a map exploration prototype with official speed-zone matches,
+nearby observed SCATS traffic summaries and a transparent screening estimate of
+capacity load. Construction objects, traffic simulation and plan optimisation
+are not implemented yet.
 
 ## Requirements
 
@@ -97,7 +98,10 @@ dist/                     Production output, ignored by Git
 
 React owns the UI state. MapLibre owns its canvas and layers. Switching views or toggling a layer updates the existing map instance. Unmounting removes map listeners, controls and workers. React renders road attributes as text instead of inserting HTML strings.
 
-The migration retains the latest UI update: three layer groups, uniform blue roads, hover/click road details, compact lane summary and 2D/3D camera transitions. The map library is installed through npm and its version is locked. Source GeoJSON and the data download logic remain unchanged.
+The migration retains the latest UI update: three layer groups, roads coloured
+by estimated capacity load, hover/click road details, compact lane summary and
+2D/3D camera transitions. The map library is installed through npm and its
+version is locked. Source GeoJSON and the data download logic remain unchanged.
 
 ## What the demo shows
 
@@ -149,21 +153,40 @@ only; they do not yet affect traffic rendering or run a simulation.
 - 2D planning view and 3D building-massing view.
 - 2023 City of Melbourne building footprints extruded using supplied structure height.
 - Public road and laneway corridor polygons.
-- Uniform blue roads with recorded lane counts shown when hovered or clicked.
+- Roads recoloured from low load (green) to near/over modelled capacity (red).
 - Development model footprints coloured by status.
 - Compact road-details panel with lane count, direction, official speed limit,
   nearby observed traffic, surface and road class where available.
-- A weekday/weekend selector with a 15-minute time slider that recolours
-  observed roads from low (green) to very high (red) relative traffic intensity.
+- A weekday/weekend selector with a 15-minute time slider that recolours roads
+  by estimated capacity load rather than each road's own daily peak.
 - Independent controls for building, development and road-context layers.
 
-Road colours represent relative observed traffic intensity at the selected
-time. Traffic figures are weekday or weekend averages from nearby September
-2026 SCATS signal detectors, not a live feed and
-not a continuous count for the full selected road. The colour scale is a
-relative daily congestion indicator: each site's smoothed 15-minute demand is
-compared with that site's own peak for the selected day type. Grey roads have
-no sufficiently close matching observation for the selected day type.
+### Estimated capacity-load logic
+
+Road colour now represents a modelled load, not a comparison with the same
+road's own daily peak. At the selected 15-minute interval:
+
+```text
+modelled capacity = mapped lanes × 1,800 vehicles/hour/lane
+                   × 50% effective green time × 0.25 hour
+                   = mapped lanes × 225 vehicles/15 minutes
+
+capacity load = observed SCATS vehicles/15 minutes ÷ modelled capacity × 100
+```
+
+The model uses a conservative default effective-green ratio of 50% because
+site-specific signal phasing and timing are not yet ingested. Green means a low
+share of the modelled capacity; yellow and orange show increasing load; red is
+near or over the modelled capacity. This prevents a quiet large road from being
+coloured red merely because its own historical peak was also low.
+
+Traffic figures remain weekday or weekend averages from nearby September 2026
+SCATS signal detectors. They are not a live feed and are not continuous counts
+for the full selected road. Grey roads have no sufficiently close matching
+SCATS observation or no mapped lane count, so no capacity load is fabricated.
+The result is a screening estimate only—not a site-specific engineering
+capacity assessment. Site configuration sheets can later replace the default
+50% effective-green assumption with actual phasing and timing.
 
 ## Data scope and refresh
 
@@ -203,6 +226,7 @@ street-name token. Unmatched speed and traffic values remain visibly unknown.
 - [DTP Speed Zones](https://opendata.transport.vic.gov.au/dataset/speed-zones)
 - [Victorian Traffic Signals](https://opendata.transport.vic.gov.au/dataset/victorian-traffic-signals)
 - [DTP Traffic Signal Volume Data](https://opendata.transport.vic.gov.au/dataset/traffic-signal-volume-data)
+- [DTP Traffic Signal Configuration Data Sheets](https://opendata.transport.vic.gov.au/dataset/traffic-signal-configuration-data-sheets)
 - [OpenStreetMap lane tags](https://www.openstreetmap.org/copyright)
 
 City of Melbourne datasets are used under their published open-data terms. Development polygons and heights are indicative, not survey-grade measurements. The City road-corridor data does not publish lane counts, so the demo overlays mapped OpenStreetMap tags. Missing values stay as `Not recorded`.
