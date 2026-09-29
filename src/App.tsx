@@ -29,6 +29,7 @@ export function App() {
   const [trafficDayType, setTrafficDayType] =
     useState<TrafficDayType>("weekday");
   const [attempt, setAttempt] = useState(0);
+  const [planningWorkZone, setPlanningWorkZone] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -51,7 +52,6 @@ export function App() {
         <LayerPanel
           data={data}
           layers={layers}
-          onRangeAction={dispatchSelection}
           onToggle={(id, enabled) =>
             setLayers((previous) => ({ ...previous, [id]: enabled }))
           }
@@ -63,6 +63,11 @@ export function App() {
           layers={layers}
           trafficTime={trafficTime}
           trafficDayType={trafficDayType}
+          planningWorkZone={planningWorkZone}
+          onStartWorkZone={() => {
+            dispatchSelection({ type: "clear" });
+            setPlanningWorkZone(true);
+          }}
           onTrafficTimeChange={setTrafficTime}
           onTrafficDayTypeChange={setTrafficDayType}
           selectedRoad={selection.selected}

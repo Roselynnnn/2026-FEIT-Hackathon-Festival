@@ -6,9 +6,11 @@ import { planAddressRange } from "../domain/addressRange";
 export function AddressRangeSelector({
   data,
   onSelect,
+  compact = false,
 }: {
   data: MapData | null;
   onSelect: (road: RoadFeature, range: WorkRange) => void;
+  compact?: boolean;
 }) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -37,8 +39,8 @@ export function AddressRangeSelector({
   }
 
   return (
-    <form className="address-range" onSubmit={submit}>
-      <h3>Select by address</h3>
+    <form className={`address-range${compact ? " compact" : ""}`} onSubmit={submit}>
+      {!compact && <h3>Select by address</h3>}
       <p>Enter two addresses on the same street. The system snaps them to the mapped road.</p>
       <label htmlFor="address-from">From</label>
       <input
@@ -57,7 +59,7 @@ export function AddressRangeSelector({
         autoComplete="off"
       />
       <button type="submit" disabled={!data || !from.trim() || !to.trim()}>
-        Locate work range
+        Set work range from addresses
       </button>
       {message && (
         <p className={error ? "address-error" : "address-success"} role="status">

@@ -80,7 +80,7 @@ src/
   components/
     Header.tsx            2D/3D controls
     LayerPanel.tsx        Statistics and the three layer switches
-    MapView.tsx           MapLibre lifecycle, hover/click events and loading/errors
+    MapView.tsx           MapLibre lifecycle, work-zone setup flow, hover/click events and loading/errors
     RoadDetails.tsx       Road, speed-zone and observed traffic attributes
   map/layers.ts           GeoJSON sources, map paint styles and visibility
   domain/roads.ts          Lane interpretation and road display fields
@@ -100,10 +100,34 @@ React owns the UI state. MapLibre owns its canvas and layers. Switching views or
 
 The migration retains the latest UI update: three layer groups, roads coloured
 by estimated capacity load, hover/click road details, compact lane summary and
-2D/3D camera transitions. The map library is installed through npm and its
-version is locked. Source GeoJSON and the data download logic remain unchanged.
+2D/3D camera transitions. A map-first work-zone setup flow now makes the
+temporary-works purpose clear on entry. The map library is installed through
+npm and its version is locked. Source GeoJSON and the data download logic
+remain unchanged.
 
 ## What the demo shows
+
+### Work-zone setup flow
+
+Select **Plan a work zone** on the map to begin a single three-step temporary
+works flow:
+
+1. Choose the work location, either by clicking a blue road or entering two
+   addresses.
+2. Mark the work range (A and B) on the selected road when choosing on the
+   map. Address entry creates this range automatically.
+3. Configure the temporary lane closure or speed restriction.
+
+The start card offers **Choose on map** and **Enter addresses** as equivalent
+ways to complete step 1; they do not create separate plans. Either method
+selects the same road context and leads into the same work-range and traffic
+restriction controls. The **−** button in the top-right of this card minimises
+the guide without discarding the in-progress setup. Select the compact **WORK
+ZONE SETUP +** marker to expand it again.
+
+This is a planning configuration workflow. It currently helps a user define a
+work zone and inspect the existing capacity load around it; it does not yet run
+a network traffic simulation or apply the restriction to the map colours.
 
 ### Road selection
 
@@ -122,12 +146,12 @@ page reload; this step does not create construction restrictions.
 
 ### Address-based work range
 
-Use **Select by address** in the left sidebar when the work site is described
-by street addresses instead of map coordinates:
+In **Plan a work zone**, select **Enter addresses** when the work site is
+described by street addresses instead of map coordinates:
 
 1. Enter the first address in **From**, for example `160 Victoria Street`.
 2. Enter the second address in **To**, for example `170 Victoria Street`.
-3. Select **Locate work range**.
+3. Select **Set work range from addresses**.
 4. The app selects the matching straight road section, zooms to the site and
    places A/B automatically. The purple line is the proposed work range.
 5. Review the calculated length and configure the lane or speed restriction.
@@ -171,11 +195,12 @@ A** and **Move B** after automatic selection.
 
 ### Custom work range
 
-Select a road, then choose **Set work range**. Click near the blue line to
-place **A**, then **B**; clicks snap to that selected section within 16 screen
-pixels. The purple line follows the road between those points, and the length
-is measured along the road in metres. Either click order is supported; A/B do
-not imply a traffic direction. Points must be at least one metre apart.
+From **Choose on map**, click a road, then choose **Set work range**. Click
+near the blue line to place **A**, then **B**; clicks snap to that selected
+section within 16 screen pixels. The purple line follows the road between
+those points, and the length is measured along the road in metres. Either click
+order is supported; A/B do not imply a traffic direction. Points must be at
+least one metre apart.
 Use **Move A / Move B** to replace one endpoint, or **Reset range** to clear
 the range while retaining the selected road. **Cancel** keeps a complete range
 when adjusting it and discards an unfinished initial range. While placing a
