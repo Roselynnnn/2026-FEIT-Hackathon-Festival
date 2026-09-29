@@ -40,11 +40,10 @@ PORT=8081 python3 serve.py
 - 2D planning view and 3D building-massing view.
 - 2023 City of Melbourne building footprints extruded using supplied structure height.
 - Public road and laneway corridor polygons.
-- Clickable road centre-lines with recorded total, forward and backward lane counts, one-way status and speed limit where available.
-- Development activity footprints coloured by status.
-- Development Activity Monitor project points.
-- 2022 CLUE building information and CLUE small-area boundaries.
-- Clickable feature inspector and independent layer controls.
+- Uniform road display with recorded lane counts shown only when a road is hovered or clicked.
+- Development model footprints coloured by status.
+- Compact road-details panel with lane count, direction, speed limit, surface and road class where available.
+- Independent controls for building, development and road-context layers.
 
 ## Data scope
 
@@ -60,10 +59,7 @@ python3 scripts/fetch_data.py
 
 - [2023 Building Footprints](https://data.melbourne.vic.gov.au/explore/dataset/2023-building-footprints/information/)
 - [Road Corridors](https://data.melbourne.vic.gov.au/explore/dataset/road-corridors/information/)
-- [Development Activity Model Footprints](https://data.melbourne.vic.gov.au/explore/dataset/development-activity-model-footprints/information/)
-- [Development Activity Monitor](https://data.melbourne.vic.gov.au/explore/dataset/development-activity-monitor/information/)
-- [CLUE Small Areas](https://data.melbourne.vic.gov.au/explore/dataset/small-areas-for-census-of-land-use-and-employment-clue/information/)
-- [Building Information](https://data.melbourne.vic.gov.au/explore/dataset/buildings-with-name-age-size-accessibility-and-bicycle-facilities/information/)
+- [Development Model Footprints](https://data.melbourne.vic.gov.au/explore/dataset/development-activity-model-footprints/information/)
 - [OpenStreetMap lane tags](https://www.openstreetmap.org/copyright)
 
 City of Melbourne datasets are used under their published open-data terms. Development model polygons and heights are indicative and should not be treated as survey-grade measurements. The City road-corridor data does not publish lane counts, so the demo overlays explicitly mapped OpenStreetMap lane tags. Missing lane values are displayed as `Not recorded` rather than inferred.
