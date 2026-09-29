@@ -1,4 +1,4 @@
-import type { FeatureCollection, LineString, Geometry } from "geojson";
+import type { Feature, FeatureCollection, LineString, Geometry } from "geojson";
 
 export type ViewMode = "2d" | "3d";
 export type TrafficDayType = "weekday" | "weekend";
@@ -47,6 +47,8 @@ export interface RoadProperties {
   highway?: string;
   last_updated?: string;
 }
+
+export type RoadFeature = Feature<LineString, RoadProperties>;
 
 export interface Manifest {
   centre: { name: string; longitude: number; latitude: number };

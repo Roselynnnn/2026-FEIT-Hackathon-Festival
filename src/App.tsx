@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import type {
   LayerVisibility,
   MapData,
-  RoadProperties,
   TrafficDayType,
   ViewMode,
 } from "./types";
@@ -11,6 +10,7 @@ import { Header } from "./components/Header";
 import { LayerPanel } from "./components/LayerPanel";
 import { RoadDetails } from "./components/RoadDetails";
 import { MapView } from "./components/MapView";
+import { emptyRoadSelection, roadSelectionReducer } from "./domain/selection";
 
 export function App() {
   const [mode, setMode] = useState<ViewMode>("2d");
@@ -21,7 +21,10 @@ export function App() {
   });
   const [data, setData] = useState<MapData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [road, setRoad] = useState<RoadProperties | null>(null);
+  const [selection, dispatchSelection] = useReducer(
+    roadSelectionReducer,
+    emptyRoadSelection,
+  );
   const [trafficTime, setTrafficTime] = useState(32);
   const [trafficDayType, setTrafficDayType] =
     useState<TrafficDayType>("weekday");
@@ -61,11 +64,18 @@ export function App() {
           trafficDayType={trafficDayType}
           onTrafficTimeChange={setTrafficTime}
           onTrafficDayTypeChange={setTrafficDayType}
-          onRoadSelect={setRoad}
+          selectedRoad={selection.selected}
+          selection={selection}
+          onRangeAction={dispatchSelection}
+          onRoadHover={(road) => dispatchSelection({ type: "hover", road })}
+          onRoadSelect={(road) => dispatchSelection({ type: "select", road })}
+          onClearSelection={() => dispatchSelection({ type: "clear" })}
           onRetryData={() => setAttempt((value) => value + 1)}
         />
         <RoadDetails
-          road={road}
+          road={(selection.selected ?? selection.hovered)?.properties ?? null}
+          isSelected={selection.selected !== null}
+          onClearSelection={() => dispatchSelection({ type: "clear" })}
           timeIndex={trafficTime}
           dayType={trafficDayType}
         />

@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import type {
-  Map as LibreMap,
-  MapGeoJSONFeature,
-  PointLike,
-} from "maplibre-gl";
-import { addLayers, syncTrafficTime, syncVisibility } from "../map/layers";
+import type { Map as LibreMap, PointLike } from "maplibre-gl";
+import {
+  addLayers,
+  syncRoadSelection,
+  syncWorkRange,
+  syncTrafficTime,
+  syncVisibility,
+} from "../map/layers";
 import { TrafficTimeBar } from "./TrafficTimeBar";
+import { WorkRangeControls } from "./WorkRangeControls";
+import { RestrictionControls } from "./RestrictionControls";
+import type { RoadSelection, RoadSelectionAction } from "../domain/selection";
+import { snapToRoad } from "../domain/workRange";
 import { formatTrafficTime, trafficDayLabel } from "../domain/traffic";
 import type {
   LayerVisibility,
   MapData,
-  RoadProperties,
+  RoadFeature,
   TrafficDayType,
   ViewMode,
 } from "../types";
@@ -29,7 +35,12 @@ interface Props {
   trafficDayType: TrafficDayType;
   onTrafficTimeChange: (value: number) => void;
   onTrafficDayTypeChange: (value: TrafficDayType) => void;
-  onRoadSelect: (road: RoadProperties) => void;
+  selectedRoad: RoadFeature | null;
+  selection: RoadSelection;
+  onRangeAction: (action: RoadSelectionAction) => void;
+  onRoadHover: (road: RoadFeature | null) => void;
+  onRoadSelect: (road: RoadFeature) => void;
+  onClearSelection: () => void;
   onRetryData: () => void;
 }
 
@@ -42,7 +53,12 @@ export function MapView({
   trafficDayType,
   onTrafficTimeChange,
   onTrafficDayTypeChange,
+  selectedRoad,
+  selection,
+  onRangeAction,
+  onRoadHover,
   onRoadSelect,
+  onClearSelection,
   onRetryData,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
@@ -52,6 +68,10 @@ export function MapView({
     layers,
     trafficTime,
     trafficDayType,
+    selectedRoad,
+    selection,
+    onRangeAction,
+    onRoadHover,
     onRoadSelect,
   });
   const [ready, setReady] = useState(false);
@@ -64,9 +84,23 @@ export function MapView({
       layers,
       trafficTime,
       trafficDayType,
+      selectedRoad,
+      selection,
+      onRangeAction,
+      onRoadHover,
       onRoadSelect,
     };
-  }, [mode, layers, trafficTime, trafficDayType, onRoadSelect]);
+  }, [
+    mode,
+    layers,
+    trafficTime,
+    trafficDayType,
+    selectedRoad,
+    selection,
+    onRangeAction,
+    onRoadHover,
+    onRoadSelect,
+  ]);
 
   useEffect(() => {
     if (!data || !container.current) return;
@@ -132,6 +166,12 @@ export function MapView({
           settings.current.trafficTime,
           settings.current.trafficDayType,
         );
+        syncRoadSelection(map, settings.current.selectedRoad);
+        syncWorkRange(
+          map,
+          settings.current.selectedRoad,
+          settings.current.selection.range,
+        );
         setMapError(null);
         setReady(true);
       } catch (error) {
@@ -144,52 +184,75 @@ export function MapView({
       if (!disposed) setMapError(event.error.message);
     });
 
-    let hoveredRoad = "";
+    // Resolve rendered tile fragments back to the original complete OSM feature.
+    const roadsById = new Map(
+      data.road_lanes.features.map((road) => [road.properties.osm_id, road]),
+    );
     function roadAt(point: PointLike) {
-      // Pointer events can arrive before the asynchronous style has loaded.
       if (!map.getLayer("road-interaction") || !settings.current.layers.roads)
         return undefined;
-      return map.queryRenderedFeatures(point, {
+      const feature = map.queryRenderedFeatures(point, {
         layers: ["road-interaction"],
       })[0];
-    }
-    function selectRoad(feature: MapGeoJSONFeature) {
-      settings.current.onRoadSelect(feature.properties as RoadProperties);
+      return feature ? roadsById.get(feature.properties.osm_id) : undefined;
     }
     map.on("click", (event) => {
+      const current = settings.current;
+      if (current.selectedRoad && current.selection.picking) {
+        const point = snapToRoad(current.selectedRoad.geometry, [
+          event.lngLat.lng,
+          event.lngLat.lat,
+        ]);
+        const screen = map.project(point.coordinates);
+        // A screen-space tolerance keeps snapping usable at any zoom or pitch,
+        // without accepting clicks far away from the selected road.
+        if (
+          Math.hypot(screen.x - event.point.x, screen.y - event.point.y) <= 16
+        ) {
+          current.onRangeAction({ type: "place-endpoint", point });
+        }
+        return;
+      }
       const road = roadAt(event.point);
-      if (road) selectRoad(road);
+      if (road) settings.current.onRoadSelect(road);
     });
     map.on("mousemove", (event) => {
       const road = roadAt(event.point);
-      map.getCanvas().style.cursor = road ? "pointer" : "";
-      if (!road) {
-        hoveredRoad = "";
-        return;
-      }
-      const key = String(
-        road.id ??
-          road.properties.osm_id ??
-          road.properties.way_id ??
-          road.properties.name ??
-          JSON.stringify(road.properties),
-      );
-      if (key !== hoveredRoad) {
-        hoveredRoad = key;
-        selectRoad(road);
-      }
+      map.getCanvas().style.cursor = settings.current.selection.picking
+        ? "crosshair"
+        : road
+          ? "pointer"
+          : "";
+      if (!settings.current.selectedRoad)
+        settings.current.onRoadHover(road ?? null);
     });
+    const clearHover = () => settings.current.onRoadHover(null);
+    map.getCanvas().addEventListener("mouseleave", clearHover);
     const observer = new ResizeObserver(() => map.resize());
     observer.observe(container.current);
     return () => {
       disposed = true;
       window.clearTimeout(timeout);
       observer.disconnect();
+      map.getCanvas().removeEventListener("mouseleave", clearHover);
       marker.remove();
       map.remove(); // Also removes its listeners, controls, canvas and workers.
       mapRef.current = null;
     };
   }, [data, attempt]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    syncRoadSelection(mapRef.current, selectedRoad);
+  }, [ready, selectedRoad]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
+    syncWorkRange(mapRef.current, selectedRoad, selection.range);
+    mapRef.current.getCanvas().style.cursor = selection.picking
+      ? "crosshair"
+      : "";
+  }, [ready, selectedRoad, selection.range, selection.picking]);
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;
@@ -230,6 +293,21 @@ export function MapView({
             : `${trafficDayLabel[trafficDayType]} traffic at ${formatTrafficTime(trafficTime)} • hover or click a road`}
         </span>
       </div>
+      {selectedRoad && (
+        <div className="map-selection" aria-label="Selected road segment">
+          <div className="map-selection-heading">
+            <div>
+              <strong>{selectedRoad.properties.name || "Selected road"}</strong>
+              <span>Blue outline marks the selected segment</span>
+            </div>
+            <button type="button" onClick={onClearSelection}>
+              Clear selection
+            </button>
+          </div>
+          <WorkRangeControls selection={selection} onAction={onRangeAction} />
+          <RestrictionControls selection={selection} onAction={onRangeAction} />
+        </div>
+      )}
       <div className="map-overlay traffic-legend">
         <span>
           <i style={{ background: "#2ca25f" }} />

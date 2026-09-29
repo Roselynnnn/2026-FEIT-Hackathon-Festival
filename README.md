@@ -101,6 +101,51 @@ The migration retains the latest UI update: three layer groups, uniform blue roa
 
 ## What the demo shows
 
+### Road selection
+
+Hover over a road to preview its details. Click to lock one complete OSM road
+segment and show its blue outline. Hovering other roads does not replace the
+selection. Click another segment to switch, or use **Clear selection** on the
+map or in the details panel to return to hover previews. Zooming and changing
+between 2D and 3D preserve the selection. The selection outline remains visible
+when the road-context layer is hidden. Selection is temporary and resets on a
+page reload; this step does not create construction restrictions.
+
+### Custom work range
+
+Select a road, then choose **Set work range**. Click near the blue line to
+place **A**, then **B**; clicks snap to that selected segment within 16 screen
+pixels. The purple line follows the road between those points, and the length
+is measured along the road in metres. Either click order is supported; A/B do
+not imply a traffic direction. Points must be at least one metre apart.
+Use **Move A / Move B** to replace one endpoint, or **Reset range** to clear
+the range while retaining the selected road. **Cancel** keeps a complete range
+when adjusting it and discards an unfinished initial range. While placing a
+point, clicks only edit the selected road; cancel placement before switching
+roads. Switching roads or clearing selection discards its range.
+
+The range stays visible through zoom, 2D/3D and road-layer visibility changes.
+It is temporary (cleared on reload), limited to one OSM segment, and stores
+snapped coordinates and offsets separately from the original road geometry.
+This defines the work extent only; it does not close roads or change traffic.
+
+### Traffic restriction configuration
+
+Below **Work range**, a complete range enables **Traffic restrictions**. Choose
+keep lanes open, partial lane closure, or full road closure. Partial closure
+supports 1 to N−1 closed lanes for a mapped N-lane road; it is unavailable when
+the mapped lane count is unknown or only one lane. Counts on two-way roads are
+totals across both directions; directional restrictions are not implemented.
+A temporary speed limit can accompany open lanes or a partial closure. Enter
+a positive whole number, no higher than the mapped speed limit when available.
+Full closure clears and hides lane-count and speed inputs.
+
+The summary shows the range length and current configuration; incomplete or
+invalid inputs are flagged rather than summarised as valid restrictions.
+Moving endpoints preserves the settings. Resetting the range, switching roads,
+clearing selection, or reloading the page clears them. These are draft settings
+only; they do not yet affect traffic rendering or run a simulation.
+
 - 2D planning view and 3D building-massing view.
 - 2023 City of Melbourne building footprints extruded using supplied structure height.
 - Public road and laneway corridor polygons.

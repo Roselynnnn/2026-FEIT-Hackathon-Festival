@@ -10,10 +10,14 @@ import {
 
 export function RoadDetails({
   road,
+  isSelected,
+  onClearSelection,
   timeIndex,
   dayType,
 }: {
   road: RoadProperties | null;
+  isSelected: boolean;
+  onClearSelection: () => void;
   timeIndex: number;
   dayType: TrafficDayType;
 }) {
@@ -26,16 +30,29 @@ export function RoadDetails({
   const dayLabel = trafficDayLabel[dayType];
   return (
     <aside className="sidebar right">
-      <h2>Road details</h2>
+      <h2>{isSelected ? "Selected road" : "Road details"}</h2>
       <div className="caption">
-        Hover over or click a coloured road to view its mapped details.
+        {isSelected
+          ? "This segment stays selected. Click another road to switch."
+          : "Hover to preview a road. Click to select its full mapped segment."}
       </div>
+      {isSelected && (
+        <div className="road-selection-actions">
+          <span>Selection locked</span>
+          <button type="button" onClick={onClearSelection}>
+            Clear selection
+          </button>
+        </div>
+      )}
       {details ? (
         <div id="detail" className="detail visible">
           <div id="detailTitle" className="detail-title">
             {details.title}
           </div>
-          <div className="detail-sub">Road lane record • OpenStreetMap</div>
+          <div className="detail-sub">
+            {isSelected ? "Selected segment" : "Hover preview"} • OpenStreetMap{" "}
+            {road?.osm_id}
+          </div>
           <div className="detail-grid">
             <div className="data-summary speed-summary">
               <span>Speed limit</span>
@@ -115,8 +132,7 @@ export function RoadDetails({
         </div>
       ) : (
         <div className="selection-empty">
-          <b>No road selected</b>Hover over or click a coloured road to view its
-          details.
+          <b>No road selected</b>Hover to preview. Click a road to select it.
         </div>
       )}
       <h3>Sources</h3>

@@ -38,7 +38,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 .app {
@@ -397,6 +398,167 @@ h3 {
   transform: rotate(45deg);
 }
 
+.map-selection {
+  position: absolute;
+  z-index: 6;
+  top: 80px;
+  left: 16px;
+  max-width: calc(100% - 80px);
+  width: 350px;
+  max-height: calc(100% - 210px);
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 2px solid #0079e8;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 4px 14px #1b283014;
+}
+.map-selection-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.work-range-controls {
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.work-range-heading,
+.work-range-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.work-range-heading strong {
+  color: #8835ba;
+  font-size: 12px;
+}
+.work-range-controls p {
+  font-size: 11px;
+  max-width: 300px;
+  margin: 7px 0;
+  color: var(--muted);
+}
+.work-range-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+.work-range-actions button {
+  color: #752a9f;
+  border-color: #d6b5e9;
+}
+.restriction-controls {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.restriction-controls fieldset {
+  padding: 0;
+  margin: 8px 0 0;
+  border: 0;
+  min-width: 0;
+}
+.restriction-controls fieldset:disabled {
+  opacity: 0.5;
+}
+.restriction-controls label {
+  display: block;
+  font-size: 11px;
+}
+.restriction-controls select {
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px;
+  border: 1px solid #b9cddd;
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+}
+.restriction-controls p {
+  margin: 6px 0;
+}
+.restriction-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.restriction-field small {
+  display: block;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.restriction-field input {
+  width: 82px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid #b9cddd;
+  border-radius: 6px;
+}
+.restriction-controls .restriction-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+.restriction-toggle input {
+  margin: 0;
+  accent-color: #8835ba;
+}
+.restriction-controls .restriction-error {
+  color: #a12632;
+  font-size: 11px;
+}
+.restriction-summary {
+  margin-top: 10px;
+  padding: 9px;
+  border-radius: 6px;
+  background: #f6effa;
+}
+.restriction-summary small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.restriction-summary b {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.map-selection strong,
+.map-selection span {
+  display: block;
+}
+.map-selection span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.map-selection button,
+.road-selection-actions button {
+  flex-shrink: 0;
+  border: 1px solid #b9cddd;
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: #fff;
+  color: #12518a;
+  cursor: pointer;
+}
+.map-selection button:hover,
+.road-selection-actions button:hover {
+  background: #eef6ff;
+}
+.road-selection-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  color: #12518a;
+  font-size: 11px;
+}
 .selection-empty {
   margin-top: 14px;
   padding: 20px 14px;

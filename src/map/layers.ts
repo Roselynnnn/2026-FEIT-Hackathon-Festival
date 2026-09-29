@@ -1,7 +1,9 @@
-import type { Map, ExpressionSpecification } from "maplibre-gl";
+import type { Map, ExpressionSpecification, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
+import { sliceRoad, type WorkRange } from "../domain/workRange";
 import type {
   MapData,
+  RoadFeature,
   LayerVisibility,
   TrafficDayType,
   ViewMode,
@@ -214,6 +216,93 @@ export function addLayers(map: Map, data: MapData) {
       "line-dasharray": [3, 2],
     },
   });
+  // Independent overlay: selecting a road does not replace its traffic colour.
+  addSource(map, "selected-road", { type: "FeatureCollection", features: [] });
+  map.addLayer({
+    id: "selected-road-casing",
+    type: "line",
+    source: "selected-road",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#ffffff", "line-gap-width": 6, "line-width": 4 },
+  });
+  map.addLayer({
+    id: "selected-road-outline",
+    type: "line",
+    source: "selected-road",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#0079e8", "line-gap-width": 6, "line-width": 2.5 },
+  });
+  addSource(map, "work-range", { type: "FeatureCollection", features: [] });
+  map.addLayer({
+    id: "work-range-line",
+    type: "line",
+    source: "work-range",
+    filter: ["==", ["geometry-type"], "LineString"],
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#8835ba", "line-width": 7 },
+  });
+  map.addLayer({
+    id: "work-range-points",
+    type: "circle",
+    source: "work-range",
+    filter: ["==", ["geometry-type"], "Point"],
+    paint: {
+      "circle-radius": 10,
+      "circle-color": "#8835ba",
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 2,
+    },
+  });
+  map.addLayer({
+    id: "work-range-labels",
+    type: "symbol",
+    source: "work-range",
+    filter: ["==", ["geometry-type"], "Point"],
+    layout: {
+      "text-field": ["get", "label"],
+      "text-size": 11,
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
+    paint: { "text-color": "#ffffff" },
+  });
+}
+
+export function syncWorkRange(
+  map: Map,
+  road: RoadFeature | null,
+  range: WorkRange,
+) {
+  const features: FeatureCollection["features"] = [];
+  if (road) {
+    const geometry = sliceRoad(road.geometry, range);
+    if (geometry)
+      features.push({
+        type: "Feature",
+        properties: { osm_id: road.properties.osm_id },
+        geometry,
+      });
+    for (const [key, label] of [
+      ["start", "A"],
+      ["end", "B"],
+    ] as const) {
+      const point = range[key];
+      if (point)
+        features.push({
+          type: "Feature",
+          properties: { label },
+          geometry: { type: "Point", coordinates: point.coordinates },
+        });
+    }
+  }
+  map
+    .getSource<GeoJSONSource>("work-range")
+    ?.setData({ type: "FeatureCollection", features });
+}
+
+export function syncRoadSelection(map: Map, road: RoadFeature | null) {
+  const source = map.getSource<GeoJSONSource>("selected-road");
+  source?.setData({ type: "FeatureCollection", features: road ? [road] : [] });
 }
 
 export function syncTrafficTime(
