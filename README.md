@@ -2,7 +2,26 @@
 
 An interactive 2D and 3D urban-context visualisation centred on Queen Victoria Market, Melbourne, with a one-kilometre study radius.
 
-## Run
+## Run on Windows without installing Python
+
+1. Download or clone the complete project folder.
+2. Open the project folder in File Explorer.
+3. Double-click `start-windows.bat`.
+4. Keep the black terminal window open while using the website.
+5. The browser will open `http://127.0.0.1:8080` automatically.
+6. To stop the website, return to the terminal and press `Ctrl+C`.
+
+Windows may display a security prompt the first time. Choose **More info**, confirm that the file is inside this project folder, and then choose **Run anyway**. The launcher only starts a local web server on your own computer.
+
+If port 8080 is already being used, run the following in PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\serve-windows.ps1 -Port 8081
+```
+
+Then open [http://127.0.0.1:8081](http://127.0.0.1:8081).
+
+## Run with Python on macOS Windows or Linux
 
 ```bash
 python3 serve.py
@@ -10,8 +29,7 @@ python3 serve.py
 
 Open [http://127.0.0.1:8080](http://127.0.0.1:8080).
 
-If port 8080 is busy, the app may already be open at that address. To run a
-second copy on another port, use:
+If port 8080 is busy, the app may already be open at that address. To run a second copy on another port, use:
 
 ```bash
 PORT=8081 python3 serve.py
