@@ -113,23 +113,63 @@ the same name and direction model, following the straightest path. It stops
 before a significant turn. Because OSM commonly changes lane tags at
 intersections, the restriction choices use the mapped lane count on the exact
 segment the user clicked while the selectable blue planning section can remain
-long.
-Hovering other roads does not replace the
-selection. Click another segment to switch, or use **Clear selection** on the
+long. Hovering other roads does not replace the selection. Click another
+segment to switch, or use **Clear selection** on the
 map or in the details panel to return to hover previews. Zooming and changing
 between 2D and 3D preserve the selection. The selection outline remains visible
 when the road-context layer is hidden. Selection is temporary and resets on a
 page reload; this step does not create construction restrictions.
 
-### Custom work range
+### Address-based work range
 
-The left sidebar also supports address-based selection. Enter two street
-addresses on the same road, such as **160 Victoria Street** and **170 Victoria
-Street**, then choose **Locate work range**. Local City of Melbourne building
-address points are interpolated along that street, snapped to the matching OSM
-road section and shown automatically as A/B. The map zooms to the result. This
-is a planning estimate rather than a cadastral or survey boundary, and an
-out-of-scope or mismatched street produces an explicit error.
+Use **Select by address** in the left sidebar when the work site is described
+by street addresses instead of map coordinates:
+
+1. Enter the first address in **From**, for example `160 Victoria Street`.
+2. Enter the second address in **To**, for example `170 Victoria Street`.
+3. Select **Locate work range**.
+4. The app selects the matching straight road section, zooms to the site and
+   places A/B automatically. The purple line is the proposed work range.
+5. Review the calculated length and configure the lane or speed restriction.
+
+The following examples have been checked against the data included in this
+repository:
+
+| From | To | Approximate range | Mapped lanes at match |
+| --- | --- | ---: | ---: |
+| `160 Victoria Street` | `170 Victoria Street` | 29 m | 2 |
+| `150 Peel Street` | `170 Peel Street` | 62 m | 2 |
+| `300 Queen Street` | `320 Queen Street` | 50 m | 2 |
+| `250 Elizabeth Street` | `270 Elizabeth Street` | 54 m | 1 |
+| `100 Franklin Street` | `120 Franklin Street` | 53 m | 2 |
+| `300 King Street` | `320 King Street` | 46 m | 3 |
+| `100 Queensberry Street` | `120 Queensberry Street` | 65 m | 2 |
+
+The matching pipeline is:
+
+```text
+typed addresses
+  -> City of Melbourne building-address points
+  -> local interpolation between nearby street numbers
+  -> matching named OpenStreetMap road
+  -> snap both points to the road geometry
+  -> selected road + A/B work range + lane-based restriction choices
+```
+
+Both addresses must be on the same street and inside the available one-kilometre
+study-area data. Street suffixes are optional (`160 Victoria` is accepted), but
+complete names are recommended for the demo. Address ranges such as `156-172`
+are resolved using spatially nearby street numbers so duplicated numbers on
+different sides or suburbs do not get joined blindly. Invalid, mismatched or
+out-of-scope addresses produce an explicit message instead of inventing a
+location.
+
+The source points come from the City of Melbourne building-information dataset.
+The calculated endpoints are planning estimates, not cadastral, survey-grade or
+traffic-management design boundaries. Users can refine the result with **Move
+A** and **Move B** after automatic selection.
+
+### Custom work range
 
 Select a road, then choose **Set work range**. Click near the blue line to
 place **A**, then **B**; clicks snap to that selected section within 16 screen
@@ -144,16 +184,16 @@ roads. Switching roads or clearing selection discards its range.
 
 The range stays visible through zoom, 2D/3D and road-layer visibility changes.
 It is temporary (cleared on reload), limited to one generated straight road
-section, and stores
-snapped coordinates and offsets separately from the original road geometry.
+section, and stores snapped coordinates and offsets separately from the
+original road geometry.
 This defines the work extent only; it does not close roads or change traffic.
 
 ### Traffic restriction configuration
 
 Below **Work range**, a complete range enables **Traffic restrictions**. The
 dropdown is generated from the selected section's mapped lane count: keep all
-lanes open, close 1 to N−1 of N lanes, or close all lanes. Partial closure is unavailable when
-the mapped lane count is unknown or only one lane. Counts on two-way roads are
+lanes open, close 1 to N−1 of N lanes, or close all lanes. Partial closure is
+unavailable when the mapped lane count is unknown or only one lane. Counts on two-way roads are
 totals across both directions; directional restrictions are not implemented.
 A temporary speed limit can accompany open lanes or a partial closure. Enter
 a positive whole number, no higher than the mapped speed limit when available.
