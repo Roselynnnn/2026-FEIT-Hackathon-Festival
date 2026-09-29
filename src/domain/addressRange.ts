@@ -17,7 +17,18 @@ interface AddressRecord {
   start: number;
   end: number;
   number: number;
+  label: string;
   coordinates: [number, number];
+}
+
+export interface EndpointAddressMatch {
+  label: string;
+  distanceM: number;
+}
+
+export interface RangeAddressMatches {
+  from: EndpointAddressMatch | null;
+  to: EndpointAddressMatch | null;
 }
 
 export interface AddressRangePlan {
@@ -36,11 +47,11 @@ function normalizeStreet(value: string) {
 }
 
 export function parseAddress(value: string): ParsedAddress {
-  const match = value
-    .trim()
-    .match(/^(\d+)[a-z]?\s+(.+?)(?:,\s*.+)?$/i);
+  const match = value.trim().match(/^(\d+)[a-z]?\s+(.+?)(?:,\s*.+)?$/i);
   if (!match)
-    throw new Error("Enter a street number and name, for example 160 Victoria Street.");
+    throw new Error(
+      "Enter a street number and name, for example 160 Victoria Street.",
+    );
   const streetLabel = match[2].trim();
   const streetKey = normalizeStreet(streetLabel);
   if (!streetKey) throw new Error("Enter a valid street name.");
@@ -51,6 +62,7 @@ function parsePublishedAddress(value: string): {
   start: number;
   end: number;
   streetKey: string;
+  label: string;
 } | null {
   const match = value.match(
     new RegExp(
@@ -63,6 +75,7 @@ function parsePublishedAddress(value: string): {
     start: Number(match[1]),
     end: Number(match[2] ?? match[1]),
     streetKey: normalizeStreet(match[3]),
+    label: `${match[1]}${match[2] ? `-${match[2]}` : ""} ${match[3].trim()}`,
   };
 }
 
@@ -80,6 +93,7 @@ function addressRecords(
       start: published.start,
       end: published.end,
       number: (published.start + published.end) / 2,
+      label: published.label,
       coordinates: feature.geometry.coordinates as [number, number],
     });
   }
@@ -104,7 +118,8 @@ function interpolateAroundAnchor(
   records: AddressRecord[],
 ): [number, number] {
   const nearby = records.filter(
-    (record) => record !== anchor && metres(anchor.coordinates, record.coordinates) < 350,
+    (record) =>
+      record !== anchor && metres(anchor.coordinates, record.coordinates) < 350,
   );
   const lower = nearby
     .filter((record) => record.number < anchor.number)
@@ -148,6 +163,52 @@ function roadName(road: RoadFeature) {
   );
 }
 
+/**
+ * Matches a point on a selected road to the nearest published address on the
+ * same named street. A distance limit prevents a nearby side-street address
+ * from being presented as an exact endpoint.
+ */
+export function matchEndpointAddress(
+  point: Position | null,
+  road: RoadFeature,
+  addresses: AddressFeature[],
+  maxDistanceM = 120,
+): EndpointAddressMatch | null {
+  if (!point) return null;
+  const streetKey = roadName(road);
+  if (!streetKey) return null;
+  const candidates = addressRecords(streetKey, addresses)
+    .map((record) => ({
+      label: record.label,
+      distanceM: metres(point, record.coordinates),
+    }))
+    .sort((a, b) => a.distanceM - b.distanceM);
+  const nearest = candidates[0];
+  return nearest && nearest.distanceM <= maxDistanceM ? nearest : null;
+}
+
+export function matchRangeAddresses(
+  range: WorkRange,
+  road: RoadFeature,
+  addresses: AddressFeature[],
+  maxDistanceM = 120,
+): RangeAddressMatches {
+  return {
+    from: matchEndpointAddress(
+      range.start?.coordinates ?? null,
+      road,
+      addresses,
+      maxDistanceM,
+    ),
+    to: matchEndpointAddress(
+      range.end?.coordinates ?? null,
+      road,
+      addresses,
+      maxDistanceM,
+    ),
+  };
+}
+
 export function planAddressRange(
   fromValue: string,
   toValue: string,
@@ -179,7 +240,11 @@ export function planAddressRange(
   );
   if (fromContaining.length && toContaining.length) {
     const pairs = fromContaining.flatMap((a) =>
-      toContaining.map((b) => ({ a, b, distance: metres(a.coordinates, b.coordinates) })),
+      toContaining.map((b) => ({
+        a,
+        b,
+        distance: metres(a.coordinates, b.coordinates),
+      })),
     );
     pairs.sort((a, b) => a.distance - b.distance);
     fromAnchor = pairs[0].a;
@@ -214,7 +279,9 @@ export function planAddressRange(
   const start = snapToRoad(road.geometry, fromCoordinates);
   const end = snapToRoad(road.geometry, toCoordinates);
   if (Math.abs(start.distance - end.distance) < 1)
-    throw new Error("The two addresses resolve to the same point. Use a wider range.");
+    throw new Error(
+      "The two addresses resolve to the same point. Use a wider range.",
+    );
   return {
     road,
     range: { start, end },

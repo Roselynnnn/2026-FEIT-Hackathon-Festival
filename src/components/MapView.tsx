@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Map as LibreMap, PointLike } from "maplibre-gl";
@@ -12,7 +12,9 @@ import {
 import { TrafficTimeBar } from "./TrafficTimeBar";
 import { WorkRangeControls } from "./WorkRangeControls";
 import { RestrictionControls } from "./RestrictionControls";
+import { TimingAssessment } from "./TimingAssessment";
 import { AddressRangeSelector } from "./AddressRangeSelector";
+import { matchRangeAddresses } from "../domain/addressRange";
 import type { RoadSelection, RoadSelectionAction } from "../domain/selection";
 import { snapToRoad } from "../domain/workRange";
 import { buildStraightRoadSection } from "../domain/corridor";
@@ -79,14 +81,23 @@ export function MapView({
     onRangeAction,
     onRoadHover,
     onRoadSelect,
+    planningWorkZone,
   });
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [selectionMethod, setSelectionMethod] = useState<"map" | "address">(
-    "map",
-  );
   const [guideMinimized, setGuideMinimized] = useState(false);
+  const rangeAddressMatches = useMemo(
+    () =>
+      data && selectedRoad
+        ? matchRangeAddresses(
+            selection.range,
+            selectedRoad,
+            data.building_info.features,
+          )
+        : { from: null, to: null },
+    [data, selectedRoad, selection.range],
+  );
 
   useEffect(() => {
     settings.current = {
@@ -99,6 +110,7 @@ export function MapView({
       onRangeAction,
       onRoadHover,
       onRoadSelect,
+      planningWorkZone,
     };
   }, [
     mode,
@@ -110,6 +122,7 @@ export function MapView({
     onRangeAction,
     onRoadHover,
     onRoadSelect,
+    planningWorkZone,
   ]);
 
   useEffect(() => {
@@ -206,7 +219,9 @@ export function MapView({
       const feature = map.queryRenderedFeatures(point, {
         layers: ["road-interaction"],
       })[0];
-      const road = feature ? roadsById.get(feature.properties.osm_id) : undefined;
+      const road = feature
+        ? roadsById.get(feature.properties.osm_id)
+        : undefined;
       if (!road) return undefined;
       const cached = sectionsById.get(road.properties.osm_id);
       if (cached) return cached;
@@ -238,9 +253,13 @@ export function MapView({
       const road = roadAt(event.point);
       map.getCanvas().style.cursor = settings.current.selection.picking
         ? "crosshair"
-        : road
-          ? "pointer"
-          : "";
+        : settings.current.planningWorkZone &&
+            !settings.current.selectedRoad &&
+            road
+          ? "crosshair"
+          : road
+            ? "pointer"
+            : "";
       if (!settings.current.selectedRoad)
         settings.current.onRoadHover(road ?? null);
     });
@@ -306,7 +325,6 @@ export function MapView({
   }, [ready, mode]);
 
   const error = dataError || mapError;
-  const workRangeIsSet = !!selection.range.start && !!selection.range.end;
   const retry = () =>
     dataError ? onRetryData() : setAttempt((value) => value + 1);
   return (
@@ -330,7 +348,6 @@ export function MapView({
           type="button"
           className="work-zone-entry"
           onClick={() => {
-            setSelectionMethod("map");
             setGuideMinimized(false);
             onStartWorkZone();
           }}
@@ -347,66 +364,73 @@ export function MapView({
           </span>
         </button>
       )}
-      {!selectedRoad && planningWorkZone && !guideMinimized && ready && (
-        <section className="work-zone-guide" aria-live="polite">
-          <div className="work-zone-guide-heading">
-            <span>WORK ZONE SETUP</span>
-            <button
-              type="button"
-              className="guide-minimise"
-              aria-label="Minimise work zone setup"
-              title="Minimise"
-              onClick={() => setGuideMinimized(true)}
-            >
-              −
+      {!selectedRoad && planningWorkZone && ready && (
+        <div className="work-zone-minimized work-zone-ready" role="status">
+          <span>WORK ZONE SETUP</span>
+          <b>
+            <i aria-hidden="true" />
+            Click a road to begin
+          </b>
+        </div>
+      )}
+      {selectedRoad && (!planningWorkZone || !guideMinimized) && (
+        <div className="map-selection" aria-label="Selected road segment">
+          {planningWorkZone && (
+            <div className="work-zone-progress" role="status">
+              <span>WORK ZONE SETUP</span>
+              <button
+                type="button"
+                className="guide-minimise"
+                aria-label="Minimise work zone setup"
+                title="Minimise"
+                onClick={() => setGuideMinimized(true)}
+              >
+                −
+              </button>
+            </div>
+          )}
+          <div className="map-selection-heading">
+            <div>
+              <strong>{selectedRoad.properties.name || "Selected road"}</strong>
+              <span>
+                Blue outline follows the straight section ·{" "}
+                {selectedRoad.properties.selection_segment_count ?? 1} mapped
+                segment
+                {selectedRoad.properties.selection_segment_count === 1
+                  ? ""
+                  : "s"}
+              </span>
+            </div>
+            <button type="button" onClick={onClearSelection}>
+              Clear selection
             </button>
           </div>
-          <div className="work-zone-methods" role="group" aria-label="Work zone selection method">
-            <button
-              type="button"
-              className={selectionMethod === "map" ? "active" : ""}
-              aria-pressed={selectionMethod === "map"}
-              onClick={() => setSelectionMethod("map")}
-            >
-              Choose on map
-            </button>
-            <button
-              type="button"
-              className={selectionMethod === "address" ? "active" : ""}
-              aria-pressed={selectionMethod === "address"}
-              onClick={() => setSelectionMethod("address")}
-            >
-              Enter addresses
-            </button>
-          </div>
-          {selectionMethod === "map" ? (
-            <>
-              <strong>Step 1 · choose the road to change</strong>
-              <p>
-                Click a blue road. You will then mark the work range and set
-                the temporary closure or speed restriction.
-              </p>
-              <ol>
-                <li className="active">Choose a road</li>
-                <li>Mark the work range</li>
-                <li>Set the restriction</li>
-              </ol>
-            </>
-          ) : (
-            <>
-              <strong>Step 1 · enter the work limits</strong>
+          <WorkRangeControls selection={selection} onAction={onRangeAction} />
+          {planningWorkZone && (
+            <div className="work-range-address">
+              <b>Exact addresses · auto-matched from A / B</b>
               <AddressRangeSelector
                 compact
                 data={data}
+                matchedFrom={rangeAddressMatches.from?.label ?? null}
+                matchedTo={rangeAddressMatches.to?.label ?? null}
                 onSelect={(road, range) =>
                   onRangeAction({ type: "select-range", road, range })
                 }
               />
-            </>
+            </div>
           )}
-        </section>
+          <RestrictionControls selection={selection} onAction={onRangeAction} />
+          <TimingAssessment
+            selection={selection}
+            timeIndex={trafficTime}
+            dayType={trafficDayType}
+            onTimeChange={onTrafficTimeChange}
+            onDayTypeChange={onTrafficDayTypeChange}
+          />
+        </div>
       )}
-      {!selectedRoad && planningWorkZone && guideMinimized && ready && (
+      {selectedRoad && planningWorkZone && guideMinimized && ready && (
         <button
           type="button"
           className="work-zone-minimized"
@@ -416,33 +440,6 @@ export function MapView({
           <span>WORK ZONE SETUP</span>
           <b>+</b>
         </button>
-      )}
-      {selectedRoad && (
-        <div className="map-selection" aria-label="Selected road segment">
-          {planningWorkZone && (
-            <div className="work-zone-progress" role="status">
-              <span>WORK ZONE SETUP</span>
-              <b>
-                {workRangeIsSet
-                  ? "Step 3 of 3 · set the restriction"
-                  : "Step 2 of 3 · mark the work range"}
-              </b>
-            </div>
-          )}
-          <div className="map-selection-heading">
-            <div>
-              <strong>{selectedRoad.properties.name || "Selected road"}</strong>
-              <span>
-                Blue outline follows the straight section · {selectedRoad.properties.selection_segment_count ?? 1} mapped segment{selectedRoad.properties.selection_segment_count === 1 ? "" : "s"}
-              </span>
-            </div>
-            <button type="button" onClick={onClearSelection}>
-              Clear selection
-            </button>
-          </div>
-          <WorkRangeControls selection={selection} onAction={onRangeAction} />
-          <RestrictionControls selection={selection} onAction={onRangeAction} />
-        </div>
       )}
       <div className="map-overlay traffic-legend">
         <span>
