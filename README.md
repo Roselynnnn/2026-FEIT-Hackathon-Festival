@@ -2,7 +2,9 @@
 
 A React + TypeScript + Vite application showing the urban context around Queen Victoria Market, Melbourne, within a one-kilometre study area. MapLibre renders the 2D map and 3D building massing.
 
-This is currently a map exploration prototype. Construction objects, traffic simulation and plan optimisation are not implemented yet.
+This is currently a map exploration prototype with official speed-zone matches
+and nearby observed SCATS traffic summaries. Construction objects, traffic
+simulation and plan optimisation are not implemented yet.
 
 ## Requirements
 
@@ -78,7 +80,7 @@ src/
     Header.tsx            2D/3D controls
     LayerPanel.tsx        Statistics and the three layer switches
     MapView.tsx           MapLibre lifecycle, hover/click events and loading/errors
-    RoadDetails.tsx       Selected road attributes
+    RoadDetails.tsx       Road, speed-zone and observed traffic attributes
   map/layers.ts           GeoJSON sources, map paint styles and visibility
   domain/roads.ts          Lane interpretation and road display fields
   data/load.ts            Abortable data loading and basic boundary validation
@@ -87,6 +89,7 @@ src/
 
 data/                     Source GeoJSON and manifest, tracked in Git
 scripts/fetch_data.py      Original Melbourne/OSM downloader
+scripts/build_transport_snapshot.py  DTP speed/SCATS enrichment
 scripts/prepare-data.mjs   Copy source data to public/data for Vite
 public/data/              Generated copy, ignored by Git
 dist/                     Production output, ignored by Git
@@ -103,10 +106,13 @@ The migration retains the latest UI update: three layer groups, uniform blue roa
 - Public road and laneway corridor polygons.
 - Uniform blue roads with recorded lane counts shown when hovered or clicked.
 - Development model footprints coloured by status.
-- Compact road-details panel with lane count, direction, speed limit, surface and road class where available.
+- Compact road-details panel with lane count, direction, official speed limit,
+  nearby observed traffic, surface and road class where available.
 - Independent controls for building, development and road-context layers.
 
-Road colours do not represent traffic conditions. The data is a snapshot, not a live traffic feed.
+Road colours do not represent traffic conditions. Traffic figures are weekday
+averages from nearby September 2026 SCATS signal detectors, not a live feed and
+not a continuous count for the full selected road.
 
 ## Data scope and refresh
 
@@ -121,11 +127,31 @@ The downloader continues to write to `data/`. Development startup and production
 
 Only the current UI's manifest, study area, buildings, roads, road lanes and development footprints are loaded. Additional source datasets remain available for future work.
 
+### Rebuild the transport snapshot
+
+Download the latest official Speed Zones GeoJSON, Victorian Traffic Signals
+CSV and Traffic Signal Volume ZIP. Then run:
+
+```bash
+python3 scripts/build_transport_snapshot.py \
+  --speed-zones /path/to/speed_zones.geojson \
+  --traffic-signals /path/to/victorian_traffic_signals.csv \
+  --scats /path/to/traffic_signal_volume.zip
+npm run prepare:data
+```
+
+The script spatially matches speed zones to the local OSM road lines. It only
+attaches traffic to a road when a SCATS site is within 70 metres and shares a
+street-name token. Unmatched speed and traffic values remain visibly unknown.
+
 ## Official sources
 
 - [2023 Building Footprints](https://data.melbourne.vic.gov.au/explore/dataset/2023-building-footprints/information/)
 - [Road Corridors](https://data.melbourne.vic.gov.au/explore/dataset/road-corridors/information/)
 - [Development Model Footprints](https://data.melbourne.vic.gov.au/explore/dataset/development-activity-model-footprints/information/)
+- [DTP Speed Zones](https://opendata.transport.vic.gov.au/dataset/speed-zones)
+- [Victorian Traffic Signals](https://opendata.transport.vic.gov.au/dataset/victorian-traffic-signals)
+- [DTP Traffic Signal Volume Data](https://opendata.transport.vic.gov.au/dataset/traffic-signal-volume-data)
 - [OpenStreetMap lane tags](https://www.openstreetmap.org/copyright)
 
 City of Melbourne datasets are used under their published open-data terms. Development polygons and heights are indicative, not survey-grade measurements. The City road-corridor data does not publish lane counts, so the demo overlays mapped OpenStreetMap tags. Missing values stay as `Not recorded`.

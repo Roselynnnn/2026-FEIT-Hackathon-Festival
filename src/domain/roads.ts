@@ -21,9 +21,33 @@ export function describeRoad(properties: RoadProperties) {
       : oneWay
         ? "One-way"
         : null;
+  const speedLimit =
+    properties.speed_limit_kmh ??
+    (properties.maxspeed && /^\d+$/.test(properties.maxspeed)
+      ? Number(properties.maxspeed)
+      : null);
+  const speed = {
+    label: speedLimit == null ? "Not recorded" : `${speedLimit} km/h`,
+    detail: properties.speed_source
+      ? `${properties.speed_source} • ${properties.speed_source_period ?? "current snapshot"}`
+      : properties.maxspeed
+        ? "OpenStreetMap mapped speed"
+        : "No speed-zone match is available for this road segment.",
+    conditions: properties.speed_zone_conditions?.join(", ") ?? null,
+  };
+  const traffic =
+    properties.traffic_avg_weekday_daily != null
+      ? {
+          daily: properties.traffic_avg_weekday_daily.toLocaleString("en-AU"),
+          amPeak: properties.traffic_am_peak_hour?.toLocaleString("en-AU"),
+          pmPeak: properties.traffic_pm_peak_hour?.toLocaleString("en-AU"),
+          site: properties.traffic_site_name ?? `Site ${properties.traffic_site_id}`,
+          period: properties.traffic_observation_period,
+          distance: properties.traffic_match_distance_m,
+        }
+      : null;
   const fields = [
     ["Direction", direction],
-    ["Speed limit", properties.maxspeed ? `${properties.maxspeed} km/h` : null],
     ["Surface", properties.surface],
     ["Road class", properties.highway],
     ["Last mapped", properties.last_updated],
@@ -40,6 +64,8 @@ export function describeRoad(properties: RoadProperties) {
       "Selected road",
     laneLabel,
     laneDetail,
+    speed,
+    traffic,
     fields,
   };
 }

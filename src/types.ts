@@ -18,6 +18,22 @@ export interface RoadProperties {
   geometry_forward_heading?: string;
   geometry_backward_heading?: string;
   maxspeed?: string;
+  speed_limit_kmh?: number;
+  speed_source?: string;
+  speed_source_period?: string;
+  speed_zone_direction?: string;
+  speed_zone_conditions?: string[];
+  speed_match_distance_m?: number;
+  traffic_site_id?: number;
+  traffic_site_name?: string;
+  traffic_site_type?: string;
+  traffic_match_distance_m?: number;
+  traffic_source?: string;
+  traffic_avg_weekday_daily?: number;
+  traffic_am_peak_hour?: number;
+  traffic_pm_peak_hour?: number;
+  traffic_observed_weekdays?: number;
+  traffic_observation_period?: string;
   surface?: string;
   highway?: string;
   last_updated?: string;
@@ -29,10 +45,16 @@ export interface Manifest {
   datasets: Record<
     string,
     {
-      features: number;
+      features?: number;
       source: string;
       dataset_id?: string;
       with_lane_count?: number;
+      with_official_speed_limit?: number;
+      with_nearby_scats_observation?: number;
+      features_matched?: number;
+      road_features_matched?: number;
+      signal_sites_in_study_area?: number;
+      reporting_period?: string;
     }
   >;
 }

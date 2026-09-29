@@ -379,6 +379,62 @@ h3 {
 .detail-grid > .lane-summary {
   grid-column: 1/-1;
 }
+.data-summary {
+  grid-column: 1/-1;
+  border: 1px solid #dfe4e7;
+  border-radius: 10px;
+  padding: 11px;
+}
+.data-summary > span,
+.traffic-peaks small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.data-summary > strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 16px;
+}
+.data-summary p {
+  margin: 5px 0 0;
+  color: #506172;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.data-summary > small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+.speed-summary {
+  background: #eef5ff;
+  border-color: #bfd4f7;
+}
+.traffic-summary {
+  background: #eef8f3;
+  border-color: #bcdcca;
+}
+.traffic-peaks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 9px;
+}
+.traffic-peaks div {
+  padding: 7px;
+  border-radius: 7px;
+  background: #fff9;
+}
+.traffic-peaks b {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+}
 .detail-item {
   background: #f5f7f7;
   border-radius: 8px;

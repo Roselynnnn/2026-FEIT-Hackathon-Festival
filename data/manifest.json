@@ -39,7 +39,20 @@
     "road_lanes": {
       "features": 2215,
       "with_lane_count": 1004,
-      "source": "https://www.openstreetmap.org/copyright"
+      "source": "https://www.openstreetmap.org/copyright",
+      "with_official_speed_limit": 1905,
+      "with_nearby_scats_observation": 831
+    },
+    "speed_zones": {
+      "features_matched": 1905,
+      "reporting_period": "August 2026",
+      "source": "https://opendata.transport.vic.gov.au/dataset/speed-zones"
+    },
+    "traffic_signal_volume": {
+      "road_features_matched": 831,
+      "signal_sites_in_study_area": 122,
+      "reporting_period": "2026-09-01 to 2026-09-27",
+      "source": "https://opendata.transport.vic.gov.au/dataset/traffic-signal-volume-data"
     }
   }
 }
