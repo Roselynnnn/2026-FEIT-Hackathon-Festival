@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import type { LayerId, LayerVisibility, MapData } from "../types";
+import type { RoadSelectionAction } from "../domain/selection";
+import { AddressRangeSelector } from "./AddressRangeSelector";
 
 const layerOptions: {
   id: LayerId;
@@ -31,10 +33,12 @@ export function LayerPanel({
   data,
   layers,
   onToggle,
+  onRangeAction,
 }: {
   data: MapData | null;
   layers: LayerVisibility;
   onToggle: (layer: LayerId, enabled: boolean) => void;
+  onRangeAction: (action: RoadSelectionAction) => void;
 }) {
   const height = useMemo(
     () =>
@@ -79,6 +83,12 @@ export function LayerPanel({
           Officially bounded by Peel, Franklin, Victoria and Elizabeth Streets
         </span>
       </div>
+      <AddressRangeSelector
+        data={data}
+        onSelect={(road, range) =>
+          onRangeAction({ type: "select-range", road, range })
+        }
+      />
       <div className="stats">
         {stats.map(([id, label, value]) => (
           <div className="stat" key={id}>

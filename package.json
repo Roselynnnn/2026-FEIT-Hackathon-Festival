@@ -14,7 +14,7 @@
     "prebuild": "npm run prepare:data",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 8080 --strictPort",
-    "test": "tsx --test src/domain/roads.test.ts src/domain/traffic.test.ts src/domain/selection.test.ts src/domain/workRange.test.ts src/domain/restrictions.test.ts src/data/load.test.ts",
+    "test": "tsx --test src/domain/roads.test.ts src/domain/traffic.test.ts src/domain/selection.test.ts src/domain/corridor.test.ts src/domain/addressRange.test.ts src/domain/workRange.test.ts src/domain/restrictions.test.ts src/data/load.test.ts",
     "format": "prettier --write src scripts/prepare-data.mjs vite.config.ts tsconfig.json package.json index.html"
   },
   "dependencies": {

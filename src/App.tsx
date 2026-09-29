@@ -51,6 +51,7 @@ export function App() {
         <LayerPanel
           data={data}
           layers={layers}
+          onRangeAction={dispatchSelection}
           onToggle={(id, enabled) =>
             setLayers((previous) => ({ ...previous, [id]: enabled }))
           }

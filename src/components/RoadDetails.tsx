@@ -38,8 +38,8 @@ export function RoadDetails({
       <h2>{isSelected ? "Selected road" : "Road details"}</h2>
       <div className="caption">
         {isSelected
-          ? "This segment stays selected. Click another road to switch."
-          : "Hover to preview a road. Click to select its full mapped segment."}
+          ? "This straight road section stays selected. Click another road to switch."
+          : "Hover to preview. Click to select a longer straight road section."}
       </div>
       {isSelected && (
         <div className="road-selection-actions">
@@ -55,8 +55,12 @@ export function RoadDetails({
             {details.title}
           </div>
           <div className="detail-sub">
-            {isSelected ? "Selected segment" : "Hover preview"} • OpenStreetMap{" "}
-            {road?.osm_id}
+            {isSelected ? "Selected straight section" : "Hover preview"} •{" "}
+            {road?.selection_segment_count ?? 1} OSM segment
+            {(road?.selection_segment_count ?? 1) === 1 ? "" : "s"}
+            {road?.selection_length_m != null
+              ? ` • ${Math.round(road.selection_length_m)} m available`
+              : ""}
           </div>
           <div className="detail-grid">
             <div className="data-summary speed-summary">

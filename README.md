@@ -107,8 +107,14 @@ version is locked. Source GeoJSON and the data download logic remain unchanged.
 
 ### Road selection
 
-Hover over a road to preview its details. Click to lock one complete OSM road
-segment and show its blue outline. Hovering other roads does not replace the
+Hover over a road to preview its details. Click to lock a longer straight road
+section and show its blue outline. The app joins connected OSM fragments with
+the same name and direction model, following the straightest path. It stops
+before a significant turn. Because OSM commonly changes lane tags at
+intersections, the restriction choices use the mapped lane count on the exact
+segment the user clicked while the selectable blue planning section can remain
+long.
+Hovering other roads does not replace the
 selection. Click another segment to switch, or use **Clear selection** on the
 map or in the details panel to return to hover previews. Zooming and changing
 between 2D and 3D preserve the selection. The selection outline remains visible
@@ -117,8 +123,16 @@ page reload; this step does not create construction restrictions.
 
 ### Custom work range
 
+The left sidebar also supports address-based selection. Enter two street
+addresses on the same road, such as **160 Victoria Street** and **170 Victoria
+Street**, then choose **Locate work range**. Local City of Melbourne building
+address points are interpolated along that street, snapped to the matching OSM
+road section and shown automatically as A/B. The map zooms to the result. This
+is a planning estimate rather than a cadastral or survey boundary, and an
+out-of-scope or mismatched street produces an explicit error.
+
 Select a road, then choose **Set work range**. Click near the blue line to
-place **A**, then **B**; clicks snap to that selected segment within 16 screen
+place **A**, then **B**; clicks snap to that selected section within 16 screen
 pixels. The purple line follows the road between those points, and the length
 is measured along the road in metres. Either click order is supported; A/B do
 not imply a traffic direction. Points must be at least one metre apart.
@@ -129,15 +143,16 @@ point, clicks only edit the selected road; cancel placement before switching
 roads. Switching roads or clearing selection discards its range.
 
 The range stays visible through zoom, 2D/3D and road-layer visibility changes.
-It is temporary (cleared on reload), limited to one OSM segment, and stores
+It is temporary (cleared on reload), limited to one generated straight road
+section, and stores
 snapped coordinates and offsets separately from the original road geometry.
 This defines the work extent only; it does not close roads or change traffic.
 
 ### Traffic restriction configuration
 
-Below **Work range**, a complete range enables **Traffic restrictions**. Choose
-keep lanes open, partial lane closure, or full road closure. Partial closure
-supports 1 to N−1 closed lanes for a mapped N-lane road; it is unavailable when
+Below **Work range**, a complete range enables **Traffic restrictions**. The
+dropdown is generated from the selected section's mapped lane count: keep all
+lanes open, close 1 to N−1 of N lanes, or close all lanes. Partial closure is unavailable when
 the mapped lane count is unknown or only one lane. Counts on two-way roads are
 totals across both directions; directional restrictions are not implemented.
 A temporary speed limit can accompany open lanes or a partial closure. Enter

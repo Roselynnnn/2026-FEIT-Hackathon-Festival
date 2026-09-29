@@ -14,6 +14,7 @@ import { WorkRangeControls } from "./WorkRangeControls";
 import { RestrictionControls } from "./RestrictionControls";
 import type { RoadSelection, RoadSelectionAction } from "../domain/selection";
 import { snapToRoad } from "../domain/workRange";
+import { buildStraightRoadSection } from "../domain/corridor";
 import { formatTrafficTime, trafficDayLabel } from "../domain/traffic";
 import type {
   LayerVisibility,
@@ -185,16 +186,24 @@ export function MapView({
     });
 
     // Resolve rendered tile fragments back to the original complete OSM feature.
+    const roadFeatures = data.road_lanes.features;
     const roadsById = new Map(
-      data.road_lanes.features.map((road) => [road.properties.osm_id, road]),
+      roadFeatures.map((road) => [road.properties.osm_id, road]),
     );
+    const sectionsById = new Map<number | undefined, RoadFeature>();
     function roadAt(point: PointLike) {
       if (!map.getLayer("road-interaction") || !settings.current.layers.roads)
         return undefined;
       const feature = map.queryRenderedFeatures(point, {
         layers: ["road-interaction"],
       })[0];
-      return feature ? roadsById.get(feature.properties.osm_id) : undefined;
+      const road = feature ? roadsById.get(feature.properties.osm_id) : undefined;
+      if (!road) return undefined;
+      const cached = sectionsById.get(road.properties.osm_id);
+      if (cached) return cached;
+      const section = buildStraightRoadSection(road, roadFeatures);
+      sectionsById.set(road.properties.osm_id, section);
+      return section;
     }
     map.on("click", (event) => {
       const current = settings.current;
@@ -255,6 +264,19 @@ export function MapView({
   }, [ready, selectedRoad, selection.range, selection.picking]);
 
   useEffect(() => {
+    const { start, end } = selection.range;
+    if (!ready || !mapRef.current || !start || !end) return;
+    const bounds = new maplibregl.LngLatBounds()
+      .extend(start.coordinates)
+      .extend(end.coordinates);
+    mapRef.current.fitBounds(bounds, {
+      padding: { top: 110, right: 60, bottom: 150, left: 390 },
+      maxZoom: 17,
+      duration: 700,
+    });
+  }, [ready, selection.range.start, selection.range.end]);
+
+  useEffect(() => {
     if (!ready || !mapRef.current) return;
     syncVisibility(mapRef.current, mode, layers);
     if (!layers.roads) mapRef.current.getCanvas().style.cursor = "";
@@ -298,7 +320,9 @@ export function MapView({
           <div className="map-selection-heading">
             <div>
               <strong>{selectedRoad.properties.name || "Selected road"}</strong>
-              <span>Blue outline marks the selected segment</span>
+              <span>
+                Blue outline follows the straight section · {selectedRoad.properties.selection_segment_count ?? 1} mapped segment{selectedRoad.properties.selection_segment_count === 1 ? "" : "s"}
+              </span>
             </div>
             <button type="button" onClick={onClearSelection}>
               Clear selection

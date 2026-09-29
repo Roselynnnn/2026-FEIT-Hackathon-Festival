@@ -6,6 +6,7 @@ const datasetNames = [
   "buildings",
   "roads",
   "road_lanes",
+  "building_info",
   "developments",
 ] as const;
 

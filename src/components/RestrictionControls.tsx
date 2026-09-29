@@ -22,63 +22,67 @@ export function RestrictionControls({
   const speed = mappedSpeedLimit(road);
   const { laneError, speedError } = restrictionErrors(restrictions, road);
   const summary = restrictionSummary(restrictions, road);
+  const accessValue =
+    restrictions.access === "partial"
+      ? `partial:${restrictions.closedLanes ?? 1}`
+      : restrictions.access;
+  const laneWord = lanes === 1 ? "lane" : "lanes";
   return (
     <section className="restriction-controls" aria-label="Traffic restrictions">
       <b>Traffic restrictions</b>
       {length === null && (
         <p className="caption">Set the work range to configure restrictions.</p>
       )}
+      {length !== null && lanes !== null && (
+        <p className="caption">
+          Choices use the {lanes} mapped {laneWord} at the clicked section.
+        </p>
+      )}
       <fieldset disabled={length === null}>
         <label htmlFor="access-mode">Access</label>
         <select
           id="access-mode"
-          value={restrictions.access}
-          onChange={(event) =>
-            onAction({
-              type: "set-access",
-              access: event.target.value as AccessMode,
-            })
-          }
+          value={accessValue}
+          onChange={(event) => {
+            const value = event.target.value;
+            if (value.startsWith("partial:")) {
+              onAction({ type: "set-access", access: "partial" });
+              onAction({
+                type: "set-closed-lanes",
+                count: Number(value.split(":")[1]),
+              });
+            } else {
+              onAction({ type: "set-access", access: value as AccessMode });
+            }
+          }}
         >
-          <option value="open">Keep lanes open</option>
-          <option value="partial" disabled={lanes === null || lanes < 2}>
-            Partial lane closure
-          </option>
-          <option value="closed">Full road closure</option>
-        </select>
-        {length !== null && (lanes === null || lanes < 2) && (
-          <p className="caption">
+          <option value="open">
             {lanes === null
-              ? "Lane count unknown — partial closure unavailable."
-              : "One mapped lane — use full closure to close it."}
+              ? "Keep lanes open"
+              : `Keep all ${lanes} ${laneWord} open`}
+          </option>
+          {lanes !== null &&
+            Array.from({ length: Math.max(0, lanes - 1) }, (_, index) => {
+              const closed = index + 1;
+              return (
+                <option key={closed} value={`partial:${closed}`}>
+                  Close {closed} of {lanes} {laneWord}
+                </option>
+              );
+            })}
+          <option value="closed">
+            {lanes === null
+              ? "Full road closure"
+              : `Full closure · close ${lanes} of ${lanes} ${laneWord}`}
+          </option>
+        </select>
+        {length !== null && lanes === null && (
+          <p className="caption">
+            Lane count unknown — partial closure unavailable.
           </p>
         )}
         {restrictions.access === "partial" && (
           <>
-            <div className="restriction-field">
-              <label htmlFor="closed-lanes">
-                Lanes closed <small>of {lanes} mapped lanes</small>
-              </label>
-              <input
-                id="closed-lanes"
-                type="number"
-                min={1}
-                max={(lanes ?? 1) - 1}
-                step={1}
-                value={restrictions.closedLanes ?? ""}
-                aria-invalid={!!laneError}
-                aria-describedby={laneError ? "lane-error" : undefined}
-                onChange={(event) =>
-                  onAction({
-                    type: "set-closed-lanes",
-                    count:
-                      event.target.value === ""
-                        ? null
-                        : event.target.valueAsNumber,
-                  })
-                }
-              />
-            </div>
             {road?.oneway_mode === "two_way" && (
               <p className="caption">
                 Lane counts are totals across both directions.

@@ -19,6 +19,7 @@ export interface RoadSelection {
 export type RoadSelectionAction =
   | { type: "hover"; road: RoadFeature | null }
   | { type: "select"; road: RoadFeature }
+  | { type: "select-range"; road: RoadFeature; range: WorkRange }
   | { type: "pick-endpoint"; endpoint: "start" | "end" }
   | { type: "place-endpoint"; point: RoadPoint }
   | { type: "reset-range" }
@@ -52,6 +53,12 @@ export function roadSelectionReducer(
       return state.selected?.properties.osm_id === action.road.properties.osm_id
         ? state
         : { ...emptyRoadSelection, selected: action.road };
+    case "select-range":
+      return {
+        ...emptyRoadSelection,
+        selected: action.road,
+        range: action.range,
+      };
     case "pick-endpoint":
       return state.selected
         ? { ...state, picking: action.endpoint, rangeError: null }
