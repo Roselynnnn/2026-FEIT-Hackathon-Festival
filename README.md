@@ -109,25 +109,27 @@ remain unchanged.
 
 ### Work-zone setup flow
 
-Select **Plan a work zone** on the map to begin a single three-step temporary
-works flow:
+Select **Plan a work zone**, then click a coloured road line to open one shared
+work-zone setup panel. The panel contains the A/B work range, exact-address
+inputs, traffic restrictions, construction duration, timing score and backup
+windows. While waiting for a road click, a compact **WORK ZONE SETUP · Click a
+road to begin** status remains visible instead of opening a separate step guide.
+The **−** button minimises a configured panel without discarding the road, work
+range or assessment. Select the compact **WORK ZONE SETUP +** marker to expand
+it again. **Clear selection** removes the previous road, A/B range,
+restrictions and assessment, then leaves only the compact **WORK ZONE SETUP**
+road-selection status. It does not return to the original orange entry button.
 
-1. Choose the work location, either by clicking a blue road or entering two
-   addresses.
-2. Mark the work range (A and B) on the selected road when choosing on the
-   map. Address entry creates this range automatically.
-3. Configure the temporary lane closure or speed restriction.
+After a road is selected, exact **From** and **To** address inputs appear
+directly below the A/B work-range controls. Placing or moving A and B
+automatically fills these fields with the nearest recorded addresses on the
+same street. The values remain editable, and submitting them selects the
+matching road and replaces the A/B range with the address-defined range.
 
-The start card offers **Choose on map** and **Enter addresses** as equivalent
-ways to complete step 1; they do not create separate plans. Either method
-selects the same road context and leads into the same work-range and traffic
-restriction controls. The **−** button in the top-right of this card minimises
-the guide without discarding the in-progress setup. Select the compact **WORK
-ZONE SETUP +** marker to expand it again.
-
-This is a planning configuration workflow. It currently helps a user define a
-work zone and inspect the existing capacity load around it; it does not yet run
-a network traffic simulation or apply the restriction to the map colours.
+This is a planning configuration workflow. It helps a user define a work zone,
+inspect the existing capacity load, score the selected construction time and
+compare two lower-flow backup windows. It does not yet run a network traffic
+simulation or apply the restriction to the map colours.
 
 ### Road selection
 
@@ -159,15 +161,15 @@ described by street addresses instead of map coordinates:
 The following examples have been checked against the data included in this
 repository:
 
-| From | To | Approximate range | Mapped lanes at match |
-| --- | --- | ---: | ---: |
-| `160 Victoria Street` | `170 Victoria Street` | 29 m | 2 |
-| `150 Peel Street` | `170 Peel Street` | 62 m | 2 |
-| `300 Queen Street` | `320 Queen Street` | 50 m | 2 |
-| `250 Elizabeth Street` | `270 Elizabeth Street` | 54 m | 1 |
-| `100 Franklin Street` | `120 Franklin Street` | 53 m | 2 |
-| `300 King Street` | `320 King Street` | 46 m | 3 |
-| `100 Queensberry Street` | `120 Queensberry Street` | 65 m | 2 |
+| From                     | To                       | Approximate range | Mapped lanes at match |
+| ------------------------ | ------------------------ | ----------------: | --------------------: |
+| `160 Victoria Street`    | `170 Victoria Street`    |              29 m |                     2 |
+| `150 Peel Street`        | `170 Peel Street`        |              62 m |                     2 |
+| `300 Queen Street`       | `320 Queen Street`       |              50 m |                     2 |
+| `250 Elizabeth Street`   | `270 Elizabeth Street`   |              54 m |                     1 |
+| `100 Franklin Street`    | `120 Franklin Street`    |              53 m |                     2 |
+| `300 King Street`        | `320 King Street`        |              46 m |                     3 |
+| `100 Queensberry Street` | `120 Queensberry Street` |              65 m |                     2 |
 
 The matching pipeline is:
 
@@ -229,6 +231,50 @@ invalid inputs are flagged rather than summarised as valid restrictions.
 Moving endpoints preserves the settings. Resetting the range, switching roads,
 clearing selection, or reloading the page clears them. These are draft settings
 only; they do not yet affect traffic rendering or run a simulation.
+
+### Construction timing score and backup windows
+
+After a road, A/B range and restriction are available, the user selects a
+construction duration of **30 minutes, 1, 2, 4, 6 or 8 hours**. **Construction
+timing** assesses the complete window starting at the selected traffic-slider
+time. The result is a 0–100 screening score and one of four verdicts:
+
+|  Score | Verdict                |
+| -----: | ---------------------- |
+| 80–100 | Recommended window     |
+|  65–79 | Suitable with controls |
+|  45–64 | High disruption risk   |
+|   0–44 | Avoid this window      |
+
+The score combines three transparent factors:
+
+```text
+traffic penalty     = selected one-hour average capacity load × 0.55
+                      (capped at 70 points)
+restriction penalty = 0 for all lanes open
+                      8 + closed-lane share × 18 for a partial closure
+                      30 for a full closure
+speed penalty       = 4 + speed-reduction share × 8 when enabled
+duration penalty    = 2 points per hour beyond the first hour
+                      (capped at 12 points)
+
+suitability score   = 100 − traffic penalty − restriction/speed penalty
+                      (clamped to 0–100)
+```
+
+The panel searches the available weekday and weekend SCATS profiles for the
+same road using the **same construction duration**. It excludes windows that
+overlap the current choice, prevents the two recommendations from overlapping
+each other, ranks candidates by average observed vehicle flow and shows the two
+lightest-flow backups. Selecting **Use** updates the weekday/weekend mode and
+time slider, then recalculates the score using the same road, A/B range,
+restriction and duration.
+
+This is a comparative hackathon screening estimate based on nearby historical
+SCATS averages, mapped OSM lanes and the existing capacity assumptions. It is
+not a traffic-management approval, safety assessment, live forecast or network
+simulation. Roads without both a complete traffic profile and mapped lane count
+show no score rather than a fabricated result.
 
 - 2D planning view and 3D building-massing view.
 - 2023 City of Melbourne building footprints extruded using supplied structure height.

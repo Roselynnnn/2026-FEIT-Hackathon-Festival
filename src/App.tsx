@@ -31,6 +31,10 @@ export function App() {
   const [attempt, setAttempt] = useState(0);
   const [planningWorkZone, setPlanningWorkZone] = useState(false);
 
+  function clearRoadSelection() {
+    dispatchSelection({ type: "clear" });
+  }
+
   useEffect(() => {
     const controller = new AbortController();
     setError(null);
@@ -75,13 +79,13 @@ export function App() {
           onRangeAction={dispatchSelection}
           onRoadHover={(road) => dispatchSelection({ type: "hover", road })}
           onRoadSelect={(road) => dispatchSelection({ type: "select", road })}
-          onClearSelection={() => dispatchSelection({ type: "clear" })}
+          onClearSelection={clearRoadSelection}
           onRetryData={() => setAttempt((value) => value + 1)}
         />
         <RoadDetails
           road={(selection.selected ?? selection.hovered)?.properties ?? null}
           isSelected={selection.selected !== null}
-          onClearSelection={() => dispatchSelection({ type: "clear" })}
+          onClearSelection={clearRoadSelection}
           timeIndex={trafficTime}
           dayType={trafficDayType}
         />
