@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve the static QVM digital-twin demo locally."""
+"""Serve the built QVM application. Run npm run build first."""
 
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -8,7 +8,7 @@ import os
 import sys
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent / "dist"
 PORT = int(os.environ.get("PORT", "8080"))
 
 
@@ -22,6 +22,10 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main() -> int:
+    if not (ROOT / "index.html").is_file():
+        print("Production build not found. Run npm ci and npm run build first.", file=sys.stderr)
+        print("For development, use npm run dev instead.", file=sys.stderr)
+        return 1
     url = f"http://127.0.0.1:{PORT}"
 
     try:

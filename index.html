@@ -1,112 +1,13 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QVM Works Digital Twin</title>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css">
-  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
-  <style>
-    :root{--ink:#172026;--muted:#68747d;--line:#dfe4e7;--paper:#fff;--soft:#f3f5f5;--yellow:#ffd300;--nav:#151b1e;--blue:#2c6eeb;--green:#159a68;--orange:#e78028;--red:#d9485f;--purple:#7555c7}
-    *{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--soft);font-size:13px;overflow:hidden}
-    button,input{font:inherit}.app{height:100%;display:grid;grid-template-rows:66px 1fr}.topbar{background:var(--nav);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:20}.brand{display:flex;align-items:center;gap:12px}.brand-mark{background:var(--yellow);color:#111;padding:7px 9px;font-weight:900;font-size:17px;letter-spacing:-.03em}.brand h1{font-size:16px;margin:0;font-weight:750}.brand p{margin:2px 0 0;color:#adb7bc;font-size:11px}.top-actions{display:flex;align-items:center;gap:10px}.data-status{display:flex;align-items:center;gap:7px;color:#cbd5d9;font-size:11px}.data-status i{display:block;width:8px;height:8px;border-radius:50%;background:#4fd1a0;box-shadow:0 0 0 4px #4fd1a025}.view-switch{display:flex;background:#2a3236;border-radius:8px;padding:3px}.view-switch button{border:0;background:transparent;color:#aeb9be;padding:7px 13px;border-radius:6px;font-weight:700;cursor:pointer}.view-switch button.active{background:#fff;color:#172026}
-    .workspace{min-height:0;display:grid;grid-template-columns:282px minmax(480px,1fr) 292px}.sidebar{background:var(--paper);overflow:auto;border-right:1px solid var(--line);padding:18px}.sidebar.right{border-right:0;border-left:1px solid var(--line)}h2{font-size:15px;margin:0 0 3px}h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:20px 0 9px}.caption{color:var(--muted);font-size:11px;line-height:1.5}.study-card{background:#fff9d9;border:1px solid #f6df65;padding:12px;border-radius:10px;margin-top:14px}.study-card strong{display:block;font-size:13px}.study-card span{font-size:11px;color:#695c18}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:9px;padding:10px}.stat b{display:block;font-size:19px}.stat span{color:var(--muted);font-size:10px}.layer{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf0f1}.layer-info{display:flex;align-items:center;gap:9px}.swatch{width:11px;height:11px;border-radius:3px;flex:none}.layer b{font-size:12px;display:block}.layer small{font-size:10px;color:var(--muted)}.switch{position:relative;width:32px;height:18px}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;inset:0;border-radius:99px;background:#cdd4d7;cursor:pointer;transition:.2s}.slider:before{content:"";position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px #0003}.switch input:checked+.slider{background:#243034}.switch input:checked+.slider:before{transform:translateX(14px)}
-    .map-shell{position:relative;min-width:0}.map{position:absolute;inset:0}.map-overlay{position:absolute;z-index:5;pointer-events:none}.map-title{top:16px;left:16px;background:#fffffff0;border:1px solid #dfe4e7;padding:10px 12px;border-radius:9px;box-shadow:0 4px 14px #1b283014}.map-title b{display:block}.map-title span{color:var(--muted);font-size:10px}.legend{left:16px;bottom:28px;background:#fffffff0;border:1px solid var(--line);border-radius:9px;padding:9px 11px;display:flex;gap:12px;box-shadow:0 4px 14px #1b283014}.legend span{display:flex;align-items:center;gap:5px;font-size:10px;color:#4d5960}.legend i{width:10px;height:10px;border-radius:2px}.market-marker{width:36px;height:36px;background:var(--yellow);border:3px solid #111;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);display:grid;place-items:center;box-shadow:0 4px 10px #0004}.market-marker:after{content:"QVM";font-size:8px;font-weight:900;transform:rotate(45deg)}
-    .selection-empty{margin-top:14px;padding:20px 14px;text-align:center;border:1px dashed #cbd3d6;border-radius:10px;color:var(--muted)}.selection-empty b{display:block;color:#344047;margin-bottom:4px}.detail{display:none}.detail.visible{display:block}.detail-title{font-size:17px;font-weight:800;line-height:1.25;margin:14px 0 4px}.detail-sub{color:var(--muted);font-size:11px;margin-bottom:14px}.lane-summary{background:#f5f7f7;border:1px solid #dfe4e7;border-radius:10px;padding:11px;margin-bottom:9px}.lane-summary span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em}.lane-summary strong{display:block;font-size:16px;margin-top:3px}.lane-summary p{margin:5px 0 0;color:#506172;font-size:10px;line-height:1.4}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.detail-grid>.lane-summary{grid-column:1/-1}.detail-item{background:#f5f7f7;border-radius:8px;padding:9px}.detail-item span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em}.detail-item b{display:block;margin-top:3px;font-size:12px;word-break:break-word}.status-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.badge{border-radius:99px;padding:5px 8px;font-size:10px;font-weight:700;background:#edf1f2}.source-list a{display:block;color:#265fbf;text-decoration:none;padding:8px 0;border-bottom:1px solid #edf0f1;font-size:11px}.source-list a:hover{text-decoration:underline}.disclaimer{font-size:10px;line-height:1.5;color:var(--muted);margin-top:12px}.loading{position:absolute;inset:0;z-index:30;background:#f4f6f5;display:grid;place-items:center;text-align:center}.loading.hidden{display:none}.loader{width:34px;height:34px;border:3px solid #dce2e4;border-top-color:#172026;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}.error{color:#a12632;max-width:420px;line-height:1.5}.maplibregl-ctrl-attrib{font-size:9px!important}
-    @media(max-width:980px){.workspace{grid-template-columns:250px 1fr}.sidebar.right{display:none}.topbar{padding:0 12px}.data-status{display:none}}@media(max-width:680px){body{overflow:auto}.app{height:auto;min-height:100%;grid-template-rows:64px auto}.workspace{display:block}.sidebar{border:0}.map-shell{height:66vh;min-height:480px}.sidebar.right{display:block}.brand p{display:none}}
-  </style>
-</head>
-<body>
-  <div class="app">
-    <header class="topbar">
-      <div class="brand"><div class="brand-mark">RPM</div><div><h1>QVM Works Digital Twin</h1><p>Queen Victoria Market • 1 km planning area</p></div></div>
-      <div class="top-actions"><div class="data-status"><i></i>Official City of Melbourne data</div><div class="view-switch" role="group" aria-label="Map view"><button id="view2d" class="active">2D</button><button id="view3d">3D</button></div></div>
-    </header>
-    <main class="workspace">
-      <aside class="sidebar">
-        <h2>Urban context</h2><div class="caption">Explore the road, building and development conditions surrounding the market.</div>
-        <div class="study-card"><strong>Queen Victoria Market</strong><span>Officially bounded by Peel, Franklin, Victoria and Elizabeth Streets</span></div>
-        <div class="stats"><div class="stat"><b id="buildingCount">—</b><span>Building footprints</span></div><div class="stat"><b id="roadCount">—</b><span>Road corridors</span></div><div class="stat"><b id="devCount">—</b><span>Development models</span></div><div class="stat"><b id="heightMax">—</b><span>Maximum mapped height</span></div></div>
-        <h3>Map layers</h3>
-        <div class="layer"><div class="layer-info"><i class="swatch" style="background:#93a8b2"></i><div><b>Existing buildings</b><small>2023 footprints + height</small></div></div><label class="switch"><input type="checkbox" data-layer="buildings" checked><span class="slider"></span></label></div>
-        <div class="layer"><div class="layer-info"><i class="swatch" style="background:#e78028"></i><div><b>Development models</b><small>Applied to completed</small></div></div><label class="switch"><input type="checkbox" data-layer="developments" checked><span class="slider"></span></label></div>
-        <div class="layer"><div class="layer-info"><i class="swatch" style="background:#2c6eeb"></i><div><b>Road corridors</b><small>Blue: public roads with mapped details</small></div></div><label class="switch"><input type="checkbox" data-layer="roads" checked><span class="slider"></span></label></div>
-        <h3>Development status</h3><div class="status-row"><span class="badge" style="background:#fff0c9">Applied</span><span class="badge" style="background:#eadfff">Approved</span><span class="badge" style="background:#ffd9c7">Under construction</span><span class="badge" style="background:#d7eee5">Complete</span></div>
-      </aside>
-      <section class="map-shell">
-        <div id="map" class="map" aria-label="Interactive map of Queen Victoria Market and surrounding one kilometre"></div>
-        <div class="map-overlay map-title"><b>1 km study area</b><span id="viewLabel">2D planning view • hover over or click a blue road</span></div>
-        <div class="map-overlay legend"><span><i style="background:#93a8b2"></i>Existing</span><span><i style="background:#e78028"></i>Development</span><span><i style="height:3px;background:#2c6eeb"></i>Road details</span><span><i style="background:#ffd300;border:1px solid #111"></i>Market</span><span><i style="background:transparent;border:2px solid #2c6eeb;border-radius:50%"></i>1 km</span></div>
-        <div id="loading" class="loading"><div><div class="loader"></div><b>Loading Melbourne open data</b><div class="caption">Buildings, roads and road details</div></div></div>
-      </section>
-      <aside class="sidebar right">
-        <h2>Road details</h2><div class="caption">Hover over or click a blue road to view its mapped details.</div>
-        <div id="selectionEmpty" class="selection-empty"><b>No road selected</b>Hover over or click a blue road to view its details.</div>
-        <div id="detail" class="detail"><div id="detailTitle" class="detail-title"></div><div id="detailSub" class="detail-sub"></div><div id="detailGrid" class="detail-grid"></div></div>
-        <h3>Sources</h3>
-        <div class="source-list">
-          <a href="https://data.melbourne.vic.gov.au/explore/dataset/road-corridors/information/" target="_blank">Road Corridors ↗</a>
-          <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap lane tags ↗</a>
-        </div>
-        <div class="disclaimer">Lane counts come from mapped OpenStreetMap tags. Missing values stay as “Not recorded”.</div>
-      </aside>
-    </main>
-  </div>
-  <script>
-    const centre=[144.9568,-37.8076];
-    const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/positron',center:centre,zoom:14.65,pitch:0,bearing:0,antialias:true,maxPitch:75});
-    map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
-    map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-right');
-    const marker=document.createElement('div');marker.className='market-marker';marker.setAttribute('aria-label','Queen Victoria Market');new maplibregl.Marker({element:marker,anchor:'bottom'}).setLngLat(centre).addTo(map);
-    const layerGroups={buildings:['buildings-2d','buildings-3d','building-outline'],developments:['developments-2d','developments-3d','development-outline'],roads:['roads-fill','roads-line','road-interaction']};
-    let mode='2d',dataCache={};
-    const statusColors=['match',['upcase',['coalesce',['get','status'],'UNKNOWN']],'APPLIED','#f0b93e','APPROVED','#8c66dc','UNDER CONSTRUCTION','#ed7441','COMPLETED','#43a67d','COMPLETE','#43a67d','#e78028'];
-    const escapeHtml=value=>String(value??'—').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-    function visible(id){const checkbox=document.querySelector(`[data-layer="${id}"]`);return checkbox?.checked!==false}
-    function setLayer(id,show){if(map.getLayer(id))map.setLayoutProperty(id,'visibility',show?'visible':'none')}
-    function syncVisibility(){Object.entries(layerGroups).forEach(([group,ids])=>ids.forEach(id=>{let show=visible(group);if(id.endsWith('-3d'))show=show&&mode==='3d';if(id.endsWith('-2d'))show=show&&mode==='2d';setLayer(id,show)}))}
-    function addSource(name,data){dataCache[name]=data;map.addSource(name,{type:'geojson',data})}
-    function addLayers(){
-      addSource('study-area',dataCache.study_area);addSource('roads',dataCache.roads);addSource('road-lanes',dataCache.road_lanes);addSource('buildings',dataCache.buildings);addSource('developments',dataCache.developments);
-      map.addLayer({id:'roads-fill',type:'fill',source:'roads',paint:{'fill-color':'#303b40','fill-opacity':.3}});map.addLayer({id:'roads-line',type:'line',source:'roads',paint:{'line-color':'#202a2f','line-width':.7,'line-opacity':.55}});
-      map.addLayer({id:'buildings-2d',type:'fill',source:'buildings',paint:{'fill-color':['interpolate',['linear'],['get','height'],2,'#cdd7da',20,'#91a7b1',80,'#5d7783',200,'#364e59'],'fill-opacity':.78}});map.addLayer({id:'building-outline',type:'line',source:'buildings',paint:{'line-color':'#52646d','line-width':.35,'line-opacity':.55}});
-      map.addLayer({id:'developments-2d',type:'fill',source:'developments',paint:{'fill-color':statusColors,'fill-opacity':.78}});map.addLayer({id:'development-outline',type:'line',source:'developments',paint:{'line-color':'#7f3d22','line-width':1,'line-opacity':.8}});
-      map.addLayer({id:'buildings-3d',type:'fill-extrusion',source:'buildings',layout:{visibility:'none'},paint:{'fill-extrusion-color':['interpolate',['linear'],['get','height'],2,'#cdd7da',20,'#91a7b1',80,'#5d7783',200,'#364e59'],'fill-extrusion-height':['get','height'],'fill-extrusion-base':0,'fill-extrusion-opacity':.88}});
-      map.addLayer({id:'developments-3d',type:'fill-extrusion',source:'developments',layout:{visibility:'none'},paint:{'fill-extrusion-color':statusColors,'fill-extrusion-height':['get','height'],'fill-extrusion-base':0,'fill-extrusion-opacity':.9}});
-      map.addLayer({id:'road-interaction',type:'line',source:'road-lanes',paint:{'line-color':'#2c6eeb','line-opacity':.85,'line-width':2.25}});
-      map.addLayer({id:'study-fill',type:'fill',source:'study-area',paint:{'fill-color':'#2c6eeb','fill-opacity':.025}});map.addLayer({id:'study-line',type:'line',source:'study-area',paint:{'line-color':'#2c6eeb','line-width':2,'line-dasharray':[3,2]}});
-      syncVisibility();
-    }
-    function updateStats(){
-      document.getElementById('buildingCount').textContent=dataCache.buildings.features.length.toLocaleString();document.getElementById('roadCount').textContent=dataCache.roads.features.length.toLocaleString();document.getElementById('devCount').textContent=dataCache.developments.features.length.toLocaleString();
-      const max=Math.max(...dataCache.buildings.features.map(f=>Number(f.properties.height)||0));document.getElementById('heightMax').textContent=Math.round(max)+' m';
-    }
-    function switchMode(next){mode=next;document.getElementById('view2d').classList.toggle('active',next==='2d');document.getElementById('view3d').classList.toggle('active',next==='3d');document.getElementById('viewLabel').textContent=next==='3d'?'3D massing view • drag to rotate':'2D planning view • hover over or click a blue road';map.easeTo(next==='3d'?{pitch:58,bearing:-22,zoom:15,duration:900}:{pitch:0,bearing:0,zoom:14.65,duration:900});syncVisibility()}
-    function laneSummaryHtml(p){
-      const lanes=p.lanes_num??'Not recorded',oneWay=p.oneway_mode==='forward'||p.oneway_mode==='reverse';
-      const heading=p.travel_heading||p.geometry_forward_heading;
-      const laneLabel=lanes==='Not recorded'?lanes:`${lanes} lane${lanes===1?'':'s'}`;
-      const detail=lanes==='Not recorded'?'No lane count is recorded for this road segment.':oneWay?`${laneLabel} in the permitted ${heading?`${heading} `:''}direction.`:`${laneLabel} total across both directions.`;
-      return `<div class="lane-summary"><span>Mapped lane count</span><strong>${escapeHtml(laneLabel)}</strong><p>${escapeHtml(detail)}</p></div>`;
-    }
-    function showRoad(feature){
-      const p=feature.properties||{};const title=p.name||p.seg_descr||p.featurenam||'Selected road';
-      const direction=p.oneway_mode==='two_way'?'Two-way':p.oneway_mode?'One-way':null;
-      const preferred=[['Direction',direction],['Speed limit',p.maxspeed?`${p.maxspeed} km/h`:null],['Surface',p.surface],['Road class',p.highway],['Last mapped',p.last_updated]];
-      const general=preferred.filter(([,value])=>value!==null&&value!==undefined&&value!=='').slice(0,4).map(([label,value])=>`<div class="detail-item"><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`).join('');
-      document.getElementById('selectionEmpty').style.display='none';document.getElementById('detail').classList.add('visible');document.getElementById('detailTitle').textContent=title;document.getElementById('detailSub').textContent='Road lane record • OpenStreetMap';document.getElementById('detailGrid').innerHTML=laneSummaryHtml(p)+general;
-    }
-    async function loadData(){
-      const names=['manifest','study_area','buildings','roads','road_lanes','developments'];
-      const values=await Promise.all(names.map(async name=>{const response=await fetch(`data/${name}.${name==='manifest'?'json':'geojson'}`);if(!response.ok)throw new Error(`${name}: ${response.status}`);return response.json()}));names.forEach((name,index)=>dataCache[name]=values[index]);
-    }
-    map.on('load',async()=>{try{await loadData();addLayers();updateStats();document.getElementById('loading').classList.add('hidden')}catch(error){document.getElementById('loading').innerHTML=`<div class="error"><b>Data could not be loaded</b><br>${escapeHtml(error.message)}<br><br>Start the project with <code>python3 serve.py</code> instead of opening the HTML file directly.</div>`}});
-    document.getElementById('view2d').addEventListener('click',()=>switchMode('2d'));document.getElementById('view3d').addEventListener('click',()=>switchMode('3d'));document.querySelectorAll('[data-layer]').forEach(input=>input.addEventListener('change',syncVisibility));
-    let hoveredRoad='';
-    function roadAt(point){return map.queryRenderedFeatures(point,{layers:['road-interaction']})[0]}
-    function roadKey(feature){return String(feature.id??feature.properties?.osm_id??feature.properties?.way_id??feature.properties?.name??JSON.stringify(feature.properties))}
-    map.on('click',event=>{const road=roadAt(event.point);if(road)showRoad(road)});
-    map.on('mousemove',event=>{const road=roadAt(event.point);map.getCanvas().style.cursor=road?'pointer':'';if(!road){hoveredRoad='';return}const key=roadKey(road);if(key!==hoveredRoad){hoveredRoad=key;showRoad(road)}});
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#151b1e" />
+    <title>QVM Works Digital Twin</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
