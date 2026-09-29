@@ -1,7 +1,10 @@
 import type { Map, ExpressionSpecification, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { sliceRoad, type WorkRange } from "../domain/workRange";
-import { ESTIMATED_CAPACITY_PER_LANE_INTERVAL } from "../domain/traffic";
+import {
+  ESTIMATED_CAPACITY_PER_LANE_INTERVAL,
+  TRAFFIC_INTERVALS_PER_DAY,
+} from "../domain/traffic";
 import type {
   MapData,
   RoadFeature,
@@ -48,7 +51,11 @@ function capacityLoadValue(
   const volume: ExpressionSpecification = [
     "case",
     ["has", property],
-    ["at", timeIndex, ["array", "number", ["get", property]]],
+    [
+      "at",
+      timeIndex,
+      ["array", "number", TRAFFIC_INTERVALS_PER_DAY, ["get", property]],
+    ],
     -1,
   ];
   const lanes: ExpressionSpecification = ["coalesce", ["get", "lanes_num"], 0];
