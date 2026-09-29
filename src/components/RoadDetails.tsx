@@ -1,13 +1,23 @@
 import type { RoadProperties } from "../types";
 import { describeRoad } from "../domain/roads";
+import { describeCongestion, formatTrafficTime } from "../domain/traffic";
 
-export function RoadDetails({ road }: { road: RoadProperties | null }) {
+export function RoadDetails({
+  road,
+  timeIndex,
+}: {
+  road: RoadProperties | null;
+  timeIndex: number;
+}) {
   const details = road ? describeRoad(road) : null;
+  const currentVolume = road?.traffic_weekday_profile?.[timeIndex];
+  const currentCongestion = road?.traffic_congestion_profile?.[timeIndex];
+  const congestion = describeCongestion(currentCongestion);
   return (
     <aside className="sidebar right">
       <h2>Road details</h2>
       <div className="caption">
-        Hover over or click a blue road to view its mapped details.
+        Hover over or click a coloured road to view its mapped details.
       </div>
       {details ? (
         <div id="detail" className="detail visible">
@@ -34,6 +44,16 @@ export function RoadDetails({ road }: { road: RoadProperties | null }) {
               {details.traffic ? (
                 <>
                   <strong>{details.traffic.daily} vehicles/day</strong>
+                  <div className={`traffic-now ${congestion.className}`}>
+                    <div>
+                      <small>{formatTrafficTime(timeIndex)} average</small>
+                      <b>
+                        {currentVolume?.toLocaleString("en-AU") ?? "—"} vehicles
+                        / 15 min
+                      </b>
+                    </div>
+                    <em>{congestion.label}</em>
+                  </div>
                   <div className="traffic-peaks">
                     <div>
                       <small>AM peak hour</small>
@@ -75,7 +95,7 @@ export function RoadDetails({ road }: { road: RoadProperties | null }) {
         </div>
       ) : (
         <div className="selection-empty">
-          <b>No road selected</b>Hover over or click a blue road to view its
+          <b>No road selected</b>Hover over or click a coloured road to view its
           details.
         </div>
       )}

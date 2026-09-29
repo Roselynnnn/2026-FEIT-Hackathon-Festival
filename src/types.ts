@@ -34,6 +34,8 @@ export interface RoadProperties {
   traffic_pm_peak_hour?: number;
   traffic_observed_weekdays?: number;
   traffic_observation_period?: string;
+  traffic_weekday_profile?: number[];
+  traffic_congestion_profile?: number[];
   surface?: string;
   highway?: string;
   last_updated?: string;

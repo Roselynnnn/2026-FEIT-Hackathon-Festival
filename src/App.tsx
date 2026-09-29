@@ -21,6 +21,7 @@ export function App() {
   const [data, setData] = useState<MapData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [road, setRoad] = useState<RoadProperties | null>(null);
+  const [trafficTime, setTrafficTime] = useState(32);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -53,10 +54,12 @@ export function App() {
           dataError={error}
           mode={mode}
           layers={layers}
+          trafficTime={trafficTime}
+          onTrafficTimeChange={setTrafficTime}
           onRoadSelect={setRoad}
           onRetryData={() => setAttempt((value) => value + 1)}
         />
-        <RoadDetails road={road} />
+        <RoadDetails road={road} timeIndex={trafficTime} />
       </main>
     </div>
   );

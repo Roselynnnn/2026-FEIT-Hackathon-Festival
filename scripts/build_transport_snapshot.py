@@ -240,6 +240,13 @@ def load_scats_metrics(path: Path, site_ids: set[str]):
             round(sum(profile[index] for profile in weekday_profiles) / len(weekday_profiles))
             for index in range(96)
         ]
+        smoothed = [
+            sum(average[max(0, index - 1) : min(96, index + 3)])
+            / len(average[max(0, index - 1) : min(96, index + 3)])
+            for index in range(96)
+        ]
+        peak = max(smoothed) or 1
+        congestion = [round(value / peak * 100) for value in smoothed]
 
         def peak_hour(start: int, end: int) -> int:
             return max(sum(average[index : index + 4]) for index in range(start, end - 3))
@@ -250,6 +257,8 @@ def load_scats_metrics(path: Path, site_ids: set[str]):
             "traffic_pm_peak_hour": peak_hour(60, 77),
             "traffic_observed_weekdays": len(weekday_profiles),
             "traffic_observation_period": f"{min(days)} to {max(days)}",
+            "traffic_weekday_profile": average,
+            "traffic_congestion_profile": congestion,
         }
     return metrics
 

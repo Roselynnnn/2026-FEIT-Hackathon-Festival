@@ -5,7 +5,12 @@ import type { MapData, LayerVisibility, ViewMode } from "../types";
 export const layerGroups = {
   buildings: ["buildings-2d", "buildings-3d", "building-outline"],
   developments: ["developments-2d", "developments-3d", "development-outline"],
-  roads: ["roads-fill", "roads-line", "road-interaction"],
+  roads: [
+    "roads-fill",
+    "roads-line",
+    "road-traffic-casing",
+    "road-interaction",
+  ],
 } as const;
 
 const statusColors: ExpressionSpecification = [
@@ -24,6 +29,39 @@ const statusColors: ExpressionSpecification = [
   "#e78028",
 ];
 
+function trafficValue(timeIndex: number): ExpressionSpecification {
+  return [
+    "case",
+    ["has", "traffic_congestion_profile"],
+    ["at", timeIndex, ["get", "traffic_congestion_profile"]],
+    -1,
+  ];
+}
+
+function trafficColor(timeIndex: number): ExpressionSpecification {
+  const value = trafficValue(timeIndex);
+  return [
+    "case",
+    ["<", value, 0],
+    "#87959b",
+    [
+      "interpolate",
+      ["linear"],
+      value,
+      0,
+      "#2ca25f",
+      35,
+      "#a6d96a",
+      55,
+      "#f6d743",
+      75,
+      "#f28e2b",
+      100,
+      "#d73027",
+    ],
+  ];
+}
+
 function addSource(map: Map, name: string, data: FeatureCollection) {
   map.addSource(name, { type: "geojson", data });
 }
@@ -38,13 +76,13 @@ export function addLayers(map: Map, data: MapData) {
     id: "roads-fill",
     type: "fill",
     source: "roads",
-    paint: { "fill-color": "#303b40", "fill-opacity": 0.3 },
+    paint: { "fill-color": "#7f8b91", "fill-opacity": 0.1 },
   });
   map.addLayer({
     id: "roads-line",
     type: "line",
     source: "roads",
-    paint: { "line-color": "#202a2f", "line-width": 0.7, "line-opacity": 0.55 },
+    paint: { "line-color": "#7f8b91", "line-width": 0.7, "line-opacity": 0.25 },
   });
   map.addLayer({
     id: "buildings-2d",
@@ -126,13 +164,23 @@ export function addLayers(map: Map, data: MapData) {
     },
   });
   map.addLayer({
+    id: "road-traffic-casing",
+    type: "line",
+    source: "road-lanes",
+    paint: {
+      "line-color": "#ffffff",
+      "line-opacity": 0.82,
+      "line-width": 5.5,
+    },
+  });
+  map.addLayer({
     id: "road-interaction",
     type: "line",
     source: "road-lanes",
     paint: {
-      "line-color": "#2c6eeb",
-      "line-opacity": 0.85,
-      "line-width": 2.25,
+      "line-color": trafficColor(32),
+      "line-opacity": 0.92,
+      "line-width": 4,
     },
   });
   map.addLayer({
@@ -151,6 +199,15 @@ export function addLayers(map: Map, data: MapData) {
       "line-dasharray": [3, 2],
     },
   });
+}
+
+export function syncTrafficTime(map: Map, timeIndex: number) {
+  if (!map.getLayer("road-interaction")) return;
+  map.setPaintProperty(
+    "road-interaction",
+    "line-color",
+    trafficColor(timeIndex),
+  );
 }
 
 export function syncVisibility(

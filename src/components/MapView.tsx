@@ -6,7 +6,9 @@ import type {
   MapGeoJSONFeature,
   PointLike,
 } from "maplibre-gl";
-import { addLayers, syncVisibility } from "../map/layers";
+import { addLayers, syncTrafficTime, syncVisibility } from "../map/layers";
+import { TrafficTimeBar } from "./TrafficTimeBar";
+import { formatTrafficTime } from "../domain/traffic";
 import type {
   LayerVisibility,
   MapData,
@@ -22,6 +24,8 @@ interface Props {
   dataError: string | null;
   mode: ViewMode;
   layers: LayerVisibility;
+  trafficTime: number;
+  onTrafficTimeChange: (value: number) => void;
   onRoadSelect: (road: RoadProperties) => void;
   onRetryData: () => void;
 }
@@ -31,19 +35,21 @@ export function MapView({
   dataError,
   mode,
   layers,
+  trafficTime,
+  onTrafficTimeChange,
   onRoadSelect,
   onRetryData,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LibreMap | null>(null);
-  const settings = useRef({ mode, layers, onRoadSelect });
+  const settings = useRef({ mode, layers, trafficTime, onRoadSelect });
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    settings.current = { mode, layers, onRoadSelect };
-  }, [mode, layers, onRoadSelect]);
+    settings.current = { mode, layers, trafficTime, onRoadSelect };
+  }, [mode, layers, trafficTime, onRoadSelect]);
 
   useEffect(() => {
     if (!data || !container.current) return;
@@ -104,6 +110,7 @@ export function MapView({
       try {
         addLayers(map, data);
         syncVisibility(map, settings.current.mode, settings.current.layers);
+        syncTrafficTime(map, settings.current.trafficTime);
         setMapError(null);
         setReady(true);
       } catch (error) {
@@ -171,6 +178,11 @@ export function MapView({
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;
+    syncTrafficTime(mapRef.current, trafficTime);
+  }, [ready, trafficTime]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
     mapRef.current.easeTo(
       mode === "3d"
         ? { pitch: 58, bearing: -22, zoom: 15, duration: 900 }
@@ -194,37 +206,32 @@ export function MapView({
         <span id="viewLabel">
           {mode === "3d"
             ? "3D massing view • drag to rotate"
-            : "2D planning view • hover over or click a blue road"}
+            : `Traffic at ${formatTrafficTime(trafficTime)} • hover or click a road`}
         </span>
       </div>
-      <div className="map-overlay legend">
+      <div className="map-overlay traffic-legend">
         <span>
-          <i style={{ background: "#93a8b2" }} />
-          Existing
+          <i style={{ background: "#2ca25f" }} />
+          Low
         </span>
         <span>
-          <i style={{ background: "#e78028" }} />
-          Development
+          <i style={{ background: "#f6d743" }} />
+          Moderate
         </span>
         <span>
-          <i style={{ height: 3, background: "#2c6eeb" }} />
-          Road details
+          <i style={{ background: "#f28e2b" }} />
+          High
         </span>
         <span>
-          <i style={{ background: "#ffd300", border: "1px solid #111" }} />
-          Market
+          <i style={{ background: "#d73027" }} />
+          Very high
         </span>
         <span>
-          <i
-            style={{
-              background: "transparent",
-              border: "2px solid #2c6eeb",
-              borderRadius: "50%",
-            }}
-          />
-          1 km
+          <i style={{ background: "#87959b" }} />
+          No data
         </span>
       </div>
+      <TrafficTimeBar value={trafficTime} onChange={onTrafficTimeChange} />
       {(!data || !ready) && (
         <div className="loading" role="status">
           {error ? (
