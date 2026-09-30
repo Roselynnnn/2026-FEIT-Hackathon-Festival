@@ -42,7 +42,7 @@ def main() -> int:
         )
         return 1
 
-    print(f"QVM Works Digital Twin: {url}")
+    print(f"Road Twin: {url}")
     print("Press Control-C to stop.")
     try:
         server.serve_forever()

@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 
-echo Starting QVM Works Digital Twin...
+echo Starting Road Twin...
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0serve-windows.ps1"
 
 if errorlevel 1 (
@@ -11,4 +11,3 @@ if errorlevel 1 (
   echo Please copy the error above and send it to the project team.
   pause
 )
-

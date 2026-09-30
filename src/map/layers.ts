@@ -337,19 +337,6 @@ const scenarioImpactColor: ExpressionSpecification = [
   ],
 ];
 
-const differenceImpactColor: ExpressionSpecification = [
-  "case",
-  ["get", "affected"],
-  "#8835ba",
-  [">=", ["get", "scenarioLoad"], 100],
-  "#d73027",
-  [">=", ["get", "volumeDelta"], 25],
-  "#f28e2b",
-  [">=", ["get", "volumeDelta"], 10],
-  "#f6d743",
-  "#268bd2",
-];
-
 export function syncSimulationImpact(
   map: Map,
   result: NetworkSimulationResult | null,
@@ -386,7 +373,7 @@ export function syncSimulationImpact(
     map.setPaintProperty(
       "simulation-impact-line",
       "line-color",
-      viewMode === "scenario" ? scenarioImpactColor : differenceImpactColor,
+      scenarioImpactColor,
     );
 }
 

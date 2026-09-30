@@ -56,7 +56,7 @@ export function ImpactSimulation({
       restrictions: selection.restrictions,
     });
     onResultChange(next);
-    if (next) onViewModeChange("difference");
+    if (next) onViewModeChange("scenario");
   }
 
   return (
@@ -86,7 +86,7 @@ export function ImpactSimulation({
             role="group"
             aria-label="Impact map view"
           >
-            {(["baseline", "scenario", "difference"] as const).map((mode) => (
+            {(["baseline", "scenario"] as const).map((mode) => (
               <button
                 type="button"
                 key={mode}
@@ -95,10 +95,8 @@ export function ImpactSimulation({
                 onClick={() => onViewModeChange(mode)}
               >
                 {mode === "baseline"
-                  ? "Baseline"
-                  : mode === "scenario"
-                    ? "With works"
-                    : "Difference"}
+                  ? "Without construction"
+                  : "During construction"}
               </button>
             ))}
           </div>

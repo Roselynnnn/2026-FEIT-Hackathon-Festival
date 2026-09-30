@@ -12,7 +12,7 @@ export function Header({
       <div className="brand">
         <div className="brand-mark">RPM</div>
         <div>
-          <h1>QVM Works Digital Twin</h1>
+          <h1>Road Twin</h1>
           <p>Queen Victoria Market • 1 km planning area</p>
         </div>
       </div>

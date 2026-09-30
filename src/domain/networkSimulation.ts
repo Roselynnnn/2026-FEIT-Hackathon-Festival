@@ -33,7 +33,7 @@ export interface RoadNetwork {
   bySource: Map<number, NetworkEdge[]>;
 }
 
-export type ImpactViewMode = "baseline" | "scenario" | "difference";
+export type ImpactViewMode = "baseline" | "scenario";
 
 export interface EdgeImpact {
   edgeId: string;

@@ -498,49 +498,32 @@ export function MapView({
         </button>
       )}
       <div className="map-overlay traffic-legend">
-        {simulationResult && impactViewMode === "difference" ? (
-          <>
-            <span>
-              <i style={{ background: "#8835ba" }} />
-              Work zone
-            </span>
-            <span>
-              <i style={{ background: "#268bd2" }} />
-              Detour
-            </span>
-            <span>
-              <i style={{ background: "#f28e2b" }} />
-              High increase
-            </span>
-            <span>
-              <i style={{ background: "#d73027" }} />
-              New bottleneck
-            </span>
-          </>
-        ) : (
-          <>
-            <span>
-              <i style={{ background: "#2ca25f" }} />
-              Low load
-            </span>
-            <span>
-              <i style={{ background: "#f6d743" }} />
-              Moderate load
-            </span>
-            <span>
-              <i style={{ background: "#f28e2b" }} />
-              High load
-            </span>
-            <span>
-              <i style={{ background: "#d73027" }} />
-              Near / over capacity
-            </span>
-            <span>
-              <i style={{ background: "#87959b" }} />
-              No estimate
-            </span>
-          </>
+        {simulationResult && impactViewMode === "scenario" && (
+          <span>
+            <i style={{ background: "#8835ba" }} />
+            Work zone
+          </span>
         )}
+        <span>
+          <i style={{ background: "#2ca25f" }} />
+          Low load
+        </span>
+        <span>
+          <i style={{ background: "#f6d743" }} />
+          Moderate load
+        </span>
+        <span>
+          <i style={{ background: "#f28e2b" }} />
+          High load
+        </span>
+        <span>
+          <i style={{ background: "#d73027" }} />
+          Near / over capacity
+        </span>
+        <span>
+          <i style={{ background: "#87959b" }} />
+          No estimate
+        </span>
       </div>
       <TrafficTimeBar
         value={trafficTime}
