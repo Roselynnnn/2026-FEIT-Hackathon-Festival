@@ -22,7 +22,7 @@ if (-not (Test-Path "node_modules")) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
-Write-Host "Starting QVM Works Digital Twin at http://127.0.0.1:$Port/" -ForegroundColor Green
+Write-Host "Starting Road Twin at http://127.0.0.1:$Port/" -ForegroundColor Green
 Write-Host "Press Ctrl+C to stop. Run npm ci again after pulling dependency changes."
 npm.cmd run dev -- --port $Port --open
 exit $LASTEXITCODE

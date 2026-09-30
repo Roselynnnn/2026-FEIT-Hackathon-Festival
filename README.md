@@ -1,4 +1,4 @@
-# QVM Works Digital Twin
+# Road Twin
 
 A React + TypeScript + Vite application showing the urban context around Queen Victoria Market, Melbourne, within a one-kilometre study area. MapLibre renders the 2D map and 3D building massing.
 
@@ -283,9 +283,35 @@ result should not be used as a calendar-specific approval or forecast.
 
 This is a comparative hackathon screening estimate based on nearby historical
 SCATS averages, mapped OSM lanes and the existing capacity assumptions. It is
-not a traffic-management approval, safety assessment, live forecast or network
-simulation. Roads without both a complete traffic profile and mapped lane count
-show no score rather than a fabricated result.
+not a traffic-management approval, safety assessment or live forecast. The
+timing score is separate from the local network simulation below. Roads without
+both a complete traffic profile and mapped lane count show no score rather than
+a fabricated result.
+
+### Local network impact simulation
+
+After defining a complete work range, restriction and duration, select
+**Run simulation** to compare the baseline with a local network-impact
+scenario. The browser converts the checked-in OSM road lines into a directed
+graph, respects mapped one-way restrictions, expands a mid-block closure to
+the nearest useful upstream and downstream junctions, and searches for up to
+three alternative routes around the affected segment.
+
+For each representative 15-minute interval in the construction window, the
+selected restriction reduces the affected link capacity. Traffic that exceeds
+the remaining capacity is assigned across the alternatives using their
+travel-time cost and existing capacity load. A full closure attempts to reroute
+all observed demand. Link travel times use a BPR-style volume-delay curve, and
+the result reports rerouted vehicles, unresolved/queued demand, additional
+vehicle delay, impacted roads and newly overloaded links. The map provides
+**Baseline**, **With works** and **Difference** views.
+
+This is a deterministic planning-screening model rather than microscopic or
+predictive traffic simulation. SCATS observations are used where available;
+uncovered links use explicit road-class load assumptions. The displayed
+confidence level reflects that coverage. Results do not currently include
+pedestrians, public transport, signal phases, turning counts, a calibrated OD
+matrix or behavioural response beyond local route choice.
 
 - 2D planning view and 3D building-massing view.
 - 2023 City of Melbourne building footprints extruded using supplied structure height.

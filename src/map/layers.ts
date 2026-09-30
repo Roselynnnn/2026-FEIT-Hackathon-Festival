@@ -1,10 +1,11 @@
 import type { Map, ExpressionSpecification, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
+import type {
+  ImpactViewMode,
+  NetworkSimulationResult,
+} from "../domain/networkSimulation";
 import { sliceRoad, type WorkRange } from "../domain/workRange";
-import {
-  ESTIMATED_CAPACITY_PER_LANE_INTERVAL,
-  TRAFFIC_INTERVALS_PER_DAY,
-} from "../domain/traffic";
+import { ESTIMATED_CAPACITY_PER_LANE_INTERVAL } from "../domain/traffic";
 import type {
   MapData,
   RoadFeature,
@@ -51,11 +52,7 @@ function capacityLoadValue(
   const volume: ExpressionSpecification = [
     "case",
     ["has", property],
-    [
-      "at",
-      timeIndex,
-      ["array", "number", TRAFFIC_INTERVALS_PER_DAY, ["get", property]],
-    ],
+    ["at", timeIndex, ["array", "number", ["get", property]]],
     -1,
   ];
   const lanes: ExpressionSpecification = ["coalesce", ["get", "lanes_num"], 0];
@@ -235,6 +232,40 @@ export function addLayers(map: Map, data: MapData) {
       "line-dasharray": [3, 2],
     },
   });
+  addSource(map, "simulation-impact", {
+    type: "FeatureCollection",
+    features: [],
+  });
+  map.addLayer({
+    id: "simulation-impact-casing",
+    type: "line",
+    source: "simulation-impact",
+    layout: {
+      visibility: "none",
+      "line-cap": "round",
+      "line-join": "round",
+    },
+    paint: {
+      "line-color": "#ffffff",
+      "line-width": ["case", ["get", "affected"], 10, 7],
+      "line-opacity": 0.9,
+    },
+  });
+  map.addLayer({
+    id: "simulation-impact-line",
+    type: "line",
+    source: "simulation-impact",
+    layout: {
+      visibility: "none",
+      "line-cap": "round",
+      "line-join": "round",
+    },
+    paint: {
+      "line-color": "#268bd2",
+      "line-width": ["case", ["get", "affected"], 7, 4.5],
+      "line-opacity": 0.94,
+    },
+  });
   // Independent overlay: selecting a road does not replace its traffic colour.
   addSource(map, "selected-road", { type: "FeatureCollection", features: [] });
   map.addLayer({
@@ -285,6 +316,65 @@ export function addLayers(map: Map, data: MapData) {
     },
     paint: { "text-color": "#ffffff" },
   });
+}
+
+const scenarioImpactColor: ExpressionSpecification = [
+  "case",
+  ["get", "affected"],
+  "#8835ba",
+  [
+    "interpolate",
+    ["linear"],
+    ["get", "scenarioLoad"],
+    0,
+    "#2ca25f",
+    55,
+    "#f6d743",
+    75,
+    "#f28e2b",
+    100,
+    "#d73027",
+  ],
+];
+
+export function syncSimulationImpact(
+  map: Map,
+  result: NetworkSimulationResult | null,
+  viewMode: ImpactViewMode,
+) {
+  const source = map.getSource<GeoJSONSource>("simulation-impact");
+  const features: FeatureCollection["features"] = result
+    ? result.edgeImpacts
+        .filter(
+          (impact) =>
+            impact.affected ||
+            impact.volumeDelta >= 1 ||
+            (viewMode === "scenario" && impact.detour),
+        )
+        .map((impact) => ({
+          type: "Feature",
+          properties: {
+            edgeId: impact.edgeId,
+            roadName: impact.roadName,
+            affected: impact.affected,
+            volumeDelta: impact.volumeDelta,
+            baselineLoad: impact.baselineLoad,
+            scenarioLoad: impact.scenarioLoad,
+          },
+          geometry: { type: "LineString", coordinates: impact.coordinates },
+        }))
+    : [];
+  source?.setData({ type: "FeatureCollection", features });
+  const visible = Boolean(result && viewMode !== "baseline");
+  for (const id of ["simulation-impact-casing", "simulation-impact-line"])
+    if (map.getLayer(id))
+      map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  if (visible && map.getLayer("simulation-impact-line"))
+    map.setPaintProperty(
+      "simulation-impact-line",
+      "line-color",
+      scenarioImpactColor,
+    );
 }
 
 export function syncWorkRange(

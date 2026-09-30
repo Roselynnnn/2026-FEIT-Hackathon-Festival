@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TrafficDayType } from "../types";
 import type { RoadSelection } from "../domain/selection";
 import { restrictionErrors } from "../domain/restrictions";
@@ -40,12 +40,14 @@ export function TimingAssessment({
   dayType,
   onTimeChange,
   onDayTypeChange,
+  onDurationIntervalsChange,
 }: {
   selection: RoadSelection;
   timeIndex: number;
   dayType: TrafficDayType;
   onTimeChange: (value: number) => void;
   onDayTypeChange: (value: TrafficDayType) => void;
+  onDurationIntervalsChange?: (value: number) => void;
 }) {
   const [durationAmount, setDurationAmount] = useState("1");
   const [durationUnit, setDurationUnit] = useState<DurationUnit>("hours");
@@ -61,6 +63,9 @@ export function TimingAssessment({
   const durationLabel = durationIsValid
     ? formatDuration(durationIntervals)
     : "an eligible duration";
+  useEffect(() => {
+    onDurationIntervalsChange?.(durationIsValid ? durationIntervals : 0);
+  }, [durationIntervals, durationIsValid, onDurationIntervalsChange]);
   const road = selection.selected?.properties ?? null;
   if (!selection.range.start || !selection.range.end || !road) return null;
   const errors = restrictionErrors(selection.restrictions, road);
@@ -80,18 +85,31 @@ export function TimingAssessment({
   );
 
   return (
-    <section className="timing-assessment" aria-label="Construction timing assessment">
+    <section
+      className="timing-assessment"
+      aria-label="Construction timing assessment"
+    >
       <div className="duration-control">
         <div>
           <label id="construction-duration-label">Construction duration</label>
-          <small>Enter a duration up to {MAX_CONSTRUCTION_DURATION_DAYS} days (about 3 months).</small>
+          <small>
+            Enter a duration up to {MAX_CONSTRUCTION_DURATION_DAYS} days (about
+            3 months).
+          </small>
         </div>
-        <div className="duration-input" role="group" aria-labelledby="construction-duration-label">
+        <div
+          className="duration-input"
+          role="group"
+          aria-labelledby="construction-duration-label"
+        >
           <input
             aria-label="Construction duration amount"
             type="number"
             min="0.25"
-            max={MAX_CONSTRUCTION_DURATION_DAYS * 24 / (durationUnitIntervals[durationUnit] / 4)}
+            max={
+              (MAX_CONSTRUCTION_DURATION_DAYS * 24) /
+              (durationUnitIntervals[durationUnit] / 4)
+            }
             step="0.25"
             value={durationAmount}
             onChange={(event) => setDurationAmount(event.target.value)}
@@ -99,10 +117,14 @@ export function TimingAssessment({
           <select
             aria-label="Construction duration unit"
             value={durationUnit}
-            onChange={(event) => setDurationUnit(event.target.value as DurationUnit)}
+            onChange={(event) =>
+              setDurationUnit(event.target.value as DurationUnit)
+            }
           >
             {Object.entries(durationUnitLabels).map(([unit, label]) => (
-              <option key={unit} value={unit}>{label}</option>
+              <option key={unit} value={unit}>
+                {label}
+              </option>
             ))}
           </select>
         </div>
@@ -132,13 +154,17 @@ export function TimingAssessment({
           <div className="timing-metrics">
             <div>
               <small>Average flow</small>
-              <b>{assessment.averageVolume.toLocaleString("en-AU")} veh / 15 min</b>
+              <b>
+                {assessment.averageVolume.toLocaleString("en-AU")} veh / 15 min
+              </b>
               <span>Across {durationLabel}</span>
             </div>
             <div>
               <small>Peak load during works</small>
               <b>{assessment.peakCapacityLoad}%</b>
-              <span>{assessment.peakVolume.toLocaleString("en-AU")} veh / 15 min</span>
+              <span>
+                {assessment.peakVolume.toLocaleString("en-AU")} veh / 15 min
+              </span>
             </div>
           </div>
           <ul>
@@ -151,8 +177,8 @@ export function TimingAssessment({
           {!durationIsValid
             ? `Enter a duration from 15 minutes up to ${MAX_CONSTRUCTION_DURATION_DAYS} days.`
             : errors.laneError || errors.speedError
-            ? "Complete the restriction fields to calculate a timing score."
-            : "No complete traffic profile and lane capacity are available for this road."}
+              ? "Complete the restriction fields to calculate a timing score."
+              : "No complete traffic profile and lane capacity are available for this road."}
         </p>
       )}
       {backups.length > 0 && (
@@ -167,7 +193,8 @@ export function TimingAssessment({
               <div className="backup-copy">
                 <b>{backup.label}</b>
                 <span>
-                  Avg {backup.averageVolume.toLocaleString("en-AU")} · peak {backup.peakCapacityLoad}% · score {backup.score}
+                  Avg {backup.averageVolume.toLocaleString("en-AU")} · peak{" "}
+                  {backup.peakCapacityLoad}% · score {backup.score}
                 </span>
               </div>
               <button
@@ -184,7 +211,8 @@ export function TimingAssessment({
         </div>
       )}
       <p className="timing-note">
-        Screening estimate from observed SCATS averages, mapped lanes and the selected restriction—not an approval or safety assessment.
+        Screening estimate from observed SCATS averages, mapped lanes and the
+        selected restriction—not an approval or safety assessment.
       </p>
     </section>
   );
