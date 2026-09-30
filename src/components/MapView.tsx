@@ -471,7 +471,7 @@ export function MapView({
             onDayTypeChange={onTrafficDayTypeChange}
             onDurationIntervalsChange={setDurationIntervals}
           />
-          {planningWorkZone && roadNetwork && (
+          {roadNetwork && (
             <ImpactSimulation
               network={roadNetwork}
               selection={selection}
