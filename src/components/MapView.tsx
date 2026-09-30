@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Map as LibreMap, PointLike } from "maplibre-gl";
@@ -14,7 +14,6 @@ import { WorkRangeControls } from "./WorkRangeControls";
 import { RestrictionControls } from "./RestrictionControls";
 import { TimingAssessment } from "./TimingAssessment";
 import { AddressRangeSelector } from "./AddressRangeSelector";
-import { matchRangeAddresses } from "../domain/addressRange";
 import type { RoadSelection, RoadSelectionAction } from "../domain/selection";
 import { snapToRoad } from "../domain/workRange";
 import { buildStraightRoadSection } from "../domain/corridor";
@@ -87,17 +86,7 @@ export function MapView({
   const [mapError, setMapError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [guideMinimized, setGuideMinimized] = useState(false);
-  const rangeAddressMatches = useMemo(
-    () =>
-      data && selectedRoad
-        ? matchRangeAddresses(
-            selection.range,
-            selectedRoad,
-            data.building_info.features,
-          )
-        : { from: null, to: null },
-    [data, selectedRoad, selection.range],
-  );
+  const [addressEntryOpen, setAddressEntryOpen] = useState(false);
 
   useEffect(() => {
     settings.current = {
@@ -408,16 +397,30 @@ export function MapView({
           <WorkRangeControls selection={selection} onAction={onRangeAction} />
           {planningWorkZone && (
             <div className="work-range-address">
-              <b>Exact addresses · auto-matched from A / B</b>
-              <AddressRangeSelector
-                compact
-                data={data}
-                matchedFrom={rangeAddressMatches.from?.label ?? null}
-                matchedTo={rangeAddressMatches.to?.label ?? null}
-                onSelect={(road, range) =>
-                  onRangeAction({ type: "select-range", road, range })
-                }
-              />
+              <div className="work-range-address-heading">
+                <div>
+                  <b>Exact address range <span>Optional</span></b>
+                  <small>
+                    Your map-selected A / B range is already ready to use.
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  aria-expanded={addressEntryOpen}
+                  onClick={() => setAddressEntryOpen((open) => !open)}
+                >
+                  {addressEntryOpen ? "Hide addresses" : "Enter addresses"}
+                </button>
+              </div>
+              {addressEntryOpen && (
+                <AddressRangeSelector
+                  compact
+                  data={data}
+                  onSelect={(road, range) =>
+                    onRangeAction({ type: "select-range", road, range })
+                  }
+                />
+              )}
             </div>
           )}
           <RestrictionControls selection={selection} onAction={onRangeAction} />

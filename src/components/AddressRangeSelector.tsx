@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { MapData, RoadFeature } from "../types";
 import type { WorkRange } from "../domain/workRange";
 import { planAddressRange } from "../domain/addressRange";
@@ -7,27 +7,15 @@ export function AddressRangeSelector({
   data,
   onSelect,
   compact = false,
-  matchedFrom,
-  matchedTo,
 }: {
   data: MapData | null;
   onSelect: (road: RoadFeature, range: WorkRange) => void;
   compact?: boolean;
-  matchedFrom?: string | null;
-  matchedTo?: string | null;
 }) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (matchedFrom !== undefined) setFrom(matchedFrom ?? "");
-  }, [matchedFrom]);
-
-  useEffect(() => {
-    if (matchedTo !== undefined) setTo(matchedTo ?? "");
-  }, [matchedTo]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -57,19 +45,15 @@ export function AddressRangeSelector({
     >
       {!compact && <h3>Select by address</h3>}
       <p>
-        Enter two addresses on the same street. The system snaps them to the
-        mapped road.
+        Use this only when you need an exact street-address range. The system
+        snaps both addresses to the mapped road.
       </p>
       <label htmlFor="address-from">From</label>
       <input
         id="address-from"
         value={from}
         onChange={(event) => setFrom(event.target.value)}
-        placeholder={
-          matchedFrom === null
-            ? "No nearby address matched for A"
-            : "160 Victoria Street"
-        }
+        placeholder="e.g. 160 Victoria Street"
         autoComplete="off"
       />
       <label htmlFor="address-to">To</label>
@@ -77,11 +61,7 @@ export function AddressRangeSelector({
         id="address-to"
         value={to}
         onChange={(event) => setTo(event.target.value)}
-        placeholder={
-          matchedTo === null
-            ? "No nearby address matched for B"
-            : "170 Victoria Street"
-        }
+        placeholder="e.g. 170 Victoria Street"
         autoComplete="off"
       />
       <button type="submit" disabled={!data || !from.trim() || !to.trim()}>
@@ -93,11 +73,6 @@ export function AddressRangeSelector({
           role="status"
         >
           {message}
-        </p>
-      )}
-      {(matchedFrom || matchedTo) && (
-        <p className="address-auto-match" role="status">
-          From / To updated from the nearest recorded addresses to A / B.
         </p>
       )}
       <small>

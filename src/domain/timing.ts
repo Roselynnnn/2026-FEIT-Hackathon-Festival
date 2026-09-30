@@ -14,15 +14,30 @@ import {
 } from "./restrictions";
 
 export const DEFAULT_CONSTRUCTION_DURATION_INTERVALS = 4;
+export const MAX_CONSTRUCTION_DURATION_DAYS = 90;
+export const MAX_CONSTRUCTION_DURATION_INTERVALS =
+  MAX_CONSTRUCTION_DURATION_DAYS * TRAFFIC_INTERVALS_PER_DAY;
 
 export const CONSTRUCTION_DURATION_OPTIONS = [
+  { intervals: 1, label: "15 minutes" },
   { intervals: 2, label: "30 minutes" },
+  { intervals: 3, label: "45 minutes" },
   { intervals: 4, label: "1 hour" },
+  { intervals: 6, label: "1.5 hours" },
   { intervals: 8, label: "2 hours" },
+  { intervals: 12, label: "3 hours" },
   { intervals: 16, label: "4 hours" },
   { intervals: 24, label: "6 hours" },
   { intervals: 32, label: "8 hours" },
 ] as const;
+
+export function isValidConstructionDuration(durationIntervals: number) {
+  return (
+    Number.isInteger(durationIntervals) &&
+    durationIntervals >= 1 &&
+    durationIntervals <= MAX_CONSTRUCTION_DURATION_INTERVALS
+  );
+}
 
 export interface TimingAssessment {
   score: number;
@@ -30,6 +45,8 @@ export interface TimingAssessment {
   className: "recommended" | "suitable" | "risk" | "avoid";
   averageVolume: number;
   capacityLoad: number;
+  peakVolume: number;
+  peakCapacityLoad: number;
   trafficReason: string;
   restrictionReason: string;
 }
@@ -40,17 +57,25 @@ export interface BackupWindow extends TimingAssessment {
   label: string;
 }
 
-function windowAverage(
+interface WindowTraffic {
+  averageVolume: number;
+  peakVolume: number;
+}
+
+function windowTraffic(
   profile: number[],
   startIndex: number,
   durationIntervals: number,
-) {
+): WindowTraffic | null {
   const values = Array.from(
     { length: durationIntervals },
     (_, offset) => profile[(startIndex + offset) % TRAFFIC_INTERVALS_PER_DAY],
   );
   if (values.some((value) => !Number.isFinite(value))) return null;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
+  return {
+    averageVolume: values.reduce((sum, value) => sum + value, 0) / values.length,
+    peakVolume: Math.max(...values),
+  };
 }
 
 function restrictionPenalty(
@@ -84,12 +109,19 @@ function restrictionPenalty(
   return { value: 0, reason: "All mapped lanes remain open." };
 }
 
-function describeTraffic(load: number) {
-  if (load < 35) return "Traffic is light relative to modelled road capacity.";
-  if (load < 60) return "Traffic is moderate relative to modelled road capacity.";
-  if (load < 80) return "Traffic is high for temporary works.";
-  if (load < 100) return "Traffic is close to modelled road capacity.";
-  return "Observed demand is at or above modelled road capacity.";
+function describeTraffic(averageLoad: number, peakLoad: number) {
+  const peakNote =
+    peakLoad - averageLoad >= 15
+      ? ` The busiest 15-minute interval reaches ${Math.round(peakLoad)}% of modelled capacity.`
+      : "";
+  if (averageLoad < 35)
+    return `Traffic is light relative to modelled road capacity.${peakNote}`;
+  if (averageLoad < 60)
+    return `Traffic is moderate relative to modelled road capacity.${peakNote}`;
+  if (averageLoad < 80) return `Traffic is high for temporary works.${peakNote}`;
+  if (averageLoad < 100)
+    return `Traffic is close to modelled road capacity.${peakNote}`;
+  return `Observed demand is at or above modelled road capacity.${peakNote}`;
 }
 
 function classifyScore(score: number) {
@@ -102,19 +134,30 @@ function classifyScore(score: number) {
   return { verdict: "Avoid this window", className: "avoid" as const };
 }
 
-function assessmentFromVolume(
+function assessmentFromTraffic(
   road: RoadProperties,
   restrictions: TrafficRestrictions,
-  averageVolume: number,
+  traffic: WindowTraffic,
   durationIntervals: number,
 ): TimingAssessment | null {
+  if (!isValidConstructionDuration(durationIntervals)) return null;
   const capacity = estimatedCapacityPerInterval(road);
   if (!capacity) return null;
-  const capacityLoad = (averageVolume / capacity) * 100;
+  const capacityLoad = (traffic.averageVolume / capacity) * 100;
+  const peakCapacityLoad = (traffic.peakVolume / capacity) * 100;
   const restriction = restrictionPenalty(road, restrictions);
-  const trafficPenalty = Math.min(70, capacityLoad * 0.55);
+  // A short spike should not be hidden by a quiet average across a longer job.
+  const trafficPenalty = Math.min(
+    72,
+    capacityLoad * 0.55 + Math.max(0, peakCapacityLoad - capacityLoad) * 0.18,
+  );
   const durationHours = durationIntervals / 4;
-  const durationPenalty = Math.min(12, Math.max(0, durationHours - 1) * 2);
+  // The logarithmic curve keeps short jobs distinguishable while still making
+  // multi-day and multi-week works meaningfully less suitable.
+  const durationPenalty = Math.min(
+    28,
+    Math.max(0, Math.log2(durationHours)) * 4.5,
+  );
   const score = Math.max(
     0,
     Math.min(
@@ -127,9 +170,11 @@ function assessmentFromVolume(
   return {
     score,
     ...classifyScore(score),
-    averageVolume: Math.round(averageVolume),
+    averageVolume: Math.round(traffic.averageVolume),
     capacityLoad: Math.round(capacityLoad),
-    trafficReason: describeTraffic(capacityLoad),
+    peakVolume: Math.round(traffic.peakVolume),
+    peakCapacityLoad: Math.round(peakCapacityLoad),
+    trafficReason: describeTraffic(capacityLoad, peakCapacityLoad),
     restrictionReason: restriction.reason,
   };
 }
@@ -149,16 +194,21 @@ export function scoreConstructionWindow(
   dayType: TrafficDayType,
   durationIntervals = DEFAULT_CONSTRUCTION_DURATION_INTERVALS,
 ): TimingAssessment | null {
-  if (!road || !restrictionsAreValid(road, restrictions)) return null;
+  if (
+    !road ||
+    !restrictionsAreValid(road, restrictions) ||
+    !isValidConstructionDuration(durationIntervals)
+  )
+    return null;
   const profile = trafficForDay(road, dayType)?.volumeProfile;
   if (!profile || profile.length !== TRAFFIC_INTERVALS_PER_DAY) return null;
-  const averageVolume = windowAverage(profile, startIndex, durationIntervals);
-  return averageVolume == null
+  const traffic = windowTraffic(profile, startIndex, durationIntervals);
+  return traffic == null
     ? null
-    : assessmentFromVolume(
+    : assessmentFromTraffic(
         road,
         restrictions,
-        averageVolume,
+        traffic,
         durationIntervals,
       );
 }
@@ -197,7 +247,12 @@ export function recommendBackupWindows(
   durationIntervals = DEFAULT_CONSTRUCTION_DURATION_INTERVALS,
   limit = 2,
 ): BackupWindow[] {
-  if (!road || !restrictionsAreValid(road, restrictions)) return [];
+  if (
+    !road ||
+    !restrictionsAreValid(road, restrictions) ||
+    !isValidConstructionDuration(durationIntervals)
+  )
+    return [];
   const candidates: BackupWindow[] = [];
   for (const dayType of ["weekday", "weekend"] as const) {
     const profile = trafficForDay(road, dayType)?.volumeProfile;
@@ -212,16 +267,16 @@ export function recommendBackupWindows(
         windowsOverlap(currentIndex, startIndex, durationIntervals)
       )
         continue;
-      const averageVolume = windowAverage(
+      const traffic = windowTraffic(
         profile,
         startIndex,
         durationIntervals,
       );
-      if (averageVolume == null) continue;
-      const assessment = assessmentFromVolume(
+      if (traffic == null) continue;
+      const assessment = assessmentFromTraffic(
         road,
         restrictions,
-        averageVolume,
+        traffic,
         durationIntervals,
       );
       if (!assessment) continue;
@@ -235,8 +290,9 @@ export function recommendBackupWindows(
   }
   const ranked = candidates.sort(
     (a, b) =>
-      a.averageVolume - b.averageVolume ||
       b.score - a.score ||
+      a.peakCapacityLoad - b.peakCapacityLoad ||
+      a.averageVolume - b.averageVolume ||
       a.startIndex - b.startIndex,
   );
   const selected: BackupWindow[] = [];
