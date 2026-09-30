@@ -110,21 +110,22 @@ remain unchanged.
 ### Work-zone setup flow
 
 Select **Plan a work zone**, then click a coloured road line to open one shared
-work-zone setup panel. The panel contains the A/B work range, exact-address
-inputs, traffic restrictions, construction duration, timing score and backup
-windows. While waiting for a road click, a compact **WORK ZONE SETUP · Click a
-road to begin** status remains visible instead of opening a separate step guide.
+work-zone setup panel. The panel contains the A/B work range, optional
+exact-address input, traffic restrictions, construction duration, timing score
+and backup windows. While waiting for a road click, a compact **WORK ZONE
+SETUP · Click a road to begin** status remains visible instead of opening a
+separate step guide.
 The **−** button minimises a configured panel without discarding the road, work
 range or assessment. Select the compact **WORK ZONE SETUP +** marker to expand
 it again. **Clear selection** removes the previous road, A/B range,
 restrictions and assessment, then leaves only the compact **WORK ZONE SETUP**
 road-selection status. It does not return to the original orange entry button.
 
-After a road is selected, exact **From** and **To** address inputs appear
-directly below the A/B work-range controls. Placing or moving A and B
-automatically fills these fields with the nearest recorded addresses on the
-same street. The values remain editable, and submitting them selects the
-matching road and replaces the A/B range with the address-defined range.
+After a road is selected, the map-selected A/B range is immediately valid;
+street addresses are not required. Select **Enter addresses** below the
+work-range controls only when an exact address-defined extent is needed.
+Submitting two addresses on the same street selects the matching road and
+replaces the A/B range with the address-defined range.
 
 This is a planning configuration workflow. It helps a user define a work zone,
 inspect the existing capacity load, score the selected construction time and
@@ -148,8 +149,9 @@ page reload; this step does not create construction restrictions.
 
 ### Address-based work range
 
-In **Plan a work zone**, select **Enter addresses** when the work site is
-described by street addresses instead of map coordinates:
+In **Plan a work zone**, select a road and expand **Enter addresses** when the
+work site is described by street addresses instead of map coordinates. This is
+optional: the purple A/B map range can be used directly.
 
 1. Enter the first address in **From**, for example `160 Victoria Street`.
 2. Enter the second address in **To**, for example `170 Victoria Street`.
@@ -235,9 +237,11 @@ only; they do not yet affect traffic rendering or run a simulation.
 ### Construction timing score and backup windows
 
 After a road, A/B range and restriction are available, the user selects a
-construction duration of **30 minutes, 1, 2, 4, 6 or 8 hours**. **Construction
-timing** assesses the complete window starting at the selected traffic-slider
-time. The result is a 0–100 screening score and one of four verdicts:
+construction duration by entering a number and choosing **hours, days or
+weeks**, up to **90 days (about three months)**. The value is rounded to the
+nearest 15-minute interval. **Construction timing** assesses the complete
+window starting at the selected traffic-slider time. The result is a 0–100
+screening score and one of four verdicts:
 
 |  Score | Verdict                |
 | -----: | ---------------------- |
@@ -249,14 +253,15 @@ time. The result is a 0–100 screening score and one of four verdicts:
 The score combines three transparent factors:
 
 ```text
-traffic penalty     = selected one-hour average capacity load × 0.55
-                      (capped at 70 points)
+traffic penalty     = full-work-window average capacity load × 0.55
+                      + the window's peak-above-average load × 0.18
+                      (capped at 72 points)
 restriction penalty = 0 for all lanes open
                       8 + closed-lane share × 18 for a partial closure
                       30 for a full closure
 speed penalty       = 4 + speed-reduction share × 8 when enabled
-duration penalty    = 2 points per hour beyond the first hour
-                      (capped at 12 points)
+duration penalty    = log2(duration in hours) × 4.5
+                      (capped at 28 points)
 
 suitability score   = 100 − traffic penalty − restriction/speed penalty
                       (clamped to 0–100)
@@ -265,10 +270,16 @@ suitability score   = 100 − traffic penalty − restriction/speed penalty
 The panel searches the available weekday and weekend SCATS profiles for the
 same road using the **same construction duration**. It excludes windows that
 overlap the current choice, prevents the two recommendations from overlapping
-each other, ranks candidates by average observed vehicle flow and shows the two
-lightest-flow backups. Selecting **Use** updates the weekday/weekend mode and
-time slider, then recalculates the score using the same road, A/B range,
-restriction and duration.
+each other, then ranks candidates by the same suitability score, peak load and
+average observed flow. Selecting **Use window** updates the weekday/weekend
+mode and time slider, then recalculates the score using the same road, A/B
+range, restriction and duration.
+
+Traffic observations are a typical 24-hour SCATS profile, not a three-month
+forecast. For works longer than a day, the chosen weekday or weekend profile
+repeats for each day in the screening calculation. The duration penalty still
+increases the disruption allowance for multi-day and multi-week works; the
+result should not be used as a calendar-specific approval or forecast.
 
 This is a comparative hackathon screening estimate based on nearby historical
 SCATS averages, mapped OSM lanes and the existing capacity assumptions. It is

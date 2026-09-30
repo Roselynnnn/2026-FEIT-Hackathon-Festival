@@ -4,6 +4,7 @@ import type { RoadProperties } from "../types";
 import { emptyRestrictions } from "./restrictions";
 import {
   formatConstructionWindow,
+  MAX_CONSTRUCTION_DURATION_INTERVALS,
   recommendBackupWindows,
   scoreConstructionWindow,
 } from "./timing";
@@ -46,6 +47,35 @@ test("more disruptive restrictions reduce the same window score", () => {
   assert.ok(open && partial && closed);
   assert.ok(open.score > partial.score);
   assert.ok(partial.score > closed.score);
+});
+
+test("a high interval within a work window lowers the score even when averages match", () => {
+  const evenRoad: RoadProperties = {
+    lanes_num: 2,
+    traffic_weekday_profile: Array(96).fill(100),
+  };
+  const spikyProfile = Array(96).fill(100) as number[];
+  spikyProfile.splice(0, 4, 20, 20, 20, 340);
+  const spikyRoad: RoadProperties = {
+    lanes_num: 2,
+    traffic_weekday_profile: spikyProfile,
+  };
+  const even = scoreConstructionWindow(
+    evenRoad,
+    emptyRestrictions,
+    0,
+    "weekday",
+  );
+  const spiky = scoreConstructionWindow(
+    spikyRoad,
+    emptyRestrictions,
+    0,
+    "weekday",
+  );
+  assert.ok(even && spiky);
+  assert.equal(even.averageVolume, spiky.averageVolume);
+  assert.ok(spiky.peakCapacityLoad > even.peakCapacityLoad);
+  assert.ok(spiky.score < even.score);
 });
 
 test("the two lightest non-current hourly windows become backups", () => {
@@ -107,4 +137,33 @@ test("construction duration changes the score and backup window length", () => {
   assert.equal(backups.length, 2);
   assert.match(backups[0].label, /\d\d:\d\d–\d\d:\d\d/);
   assert.equal(formatConstructionWindow(8, 16), "02:00–06:00");
+});
+
+test("durations are capped at three months and long works remain less suitable", () => {
+  const oneHour = scoreConstructionWindow(
+    road,
+    emptyRestrictions,
+    8,
+    "weekday",
+    4,
+  );
+  const threeMonths = scoreConstructionWindow(
+    road,
+    emptyRestrictions,
+    8,
+    "weekday",
+    MAX_CONSTRUCTION_DURATION_INTERVALS,
+  );
+  assert.ok(oneHour && threeMonths);
+  assert.ok(threeMonths.score < oneHour.score);
+  assert.equal(
+    scoreConstructionWindow(
+      road,
+      emptyRestrictions,
+      8,
+      "weekday",
+      MAX_CONSTRUCTION_DURATION_INTERVALS + 1,
+    ),
+    null,
+  );
 });
