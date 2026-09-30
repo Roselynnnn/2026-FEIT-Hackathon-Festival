@@ -151,7 +151,7 @@ export function RestrictionControls({
       </fieldset>
       {length !== null && (
         <div className="restriction-summary" role="status">
-          <small>Configuration · not yet simulated</small>
+          <small>Configuration · ready for network simulation</small>
           <b>
             {Math.round(length)} m · {summary ?? "Complete the fields above"}
           </b>

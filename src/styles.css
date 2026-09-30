@@ -1310,6 +1310,132 @@ h3 {
   color: var(--muted);
   margin-top: 12px;
 }
+.impact-simulation {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.impact-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.impact-heading small,
+.impact-metrics small {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.impact-heading b {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+}
+.impact-heading button {
+  border-color: #2b6a91;
+  background: #17638d;
+  color: #fff;
+}
+.impact-heading button:hover {
+  background: #0f5277;
+}
+.impact-heading button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.impact-empty,
+.impact-warning {
+  margin: 8px 0 0;
+  color: #63747d;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.impact-warning {
+  padding: 7px 8px;
+  border-radius: 7px;
+  background: #f4f6f6;
+}
+.impact-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  margin-top: 10px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #e8eef1;
+}
+.impact-view-tabs button {
+  border: 0;
+  background: transparent;
+  color: #52646d;
+  font-size: 9px;
+}
+.impact-view-tabs button.active {
+  background: #fff;
+  color: #155d86;
+  box-shadow: 0 1px 4px #1d40531c;
+}
+.impact-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 9px;
+}
+.impact-metrics div {
+  padding: 8px;
+  border: 1px solid #dce7ec;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+.impact-metrics b,
+.impact-metrics span {
+  display: block;
+}
+.impact-metrics b {
+  margin-top: 2px;
+  color: #174d69;
+  font-size: 13px;
+}
+.impact-metrics span {
+  margin-top: 2px;
+  color: #71808a;
+  font-size: 8px;
+}
+.impact-confidence {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px;
+  margin-top: 9px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #e8f3f8;
+  color: #315d72;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.impact-confidence b {
+  white-space: nowrap;
+}
+.impact-confidence.low {
+  background: #fff0dc;
+  color: #8a5520;
+}
+.impact-simulation details {
+  margin-top: 8px;
+  color: #5a6970;
+  font-size: 9px;
+}
+.impact-simulation summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.impact-simulation details ul {
+  margin: 6px 0 0;
+  padding-left: 17px;
+  line-height: 1.45;
+}
 .loading {
   position: absolute;
   inset: 0;

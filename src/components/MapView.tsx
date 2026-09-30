@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Map as LibreMap, PointLike } from "maplibre-gl";
@@ -8,16 +8,23 @@ import {
   syncWorkRange,
   syncTrafficTime,
   syncVisibility,
+  syncSimulationImpact,
 } from "../map/layers";
 import { TrafficTimeBar } from "./TrafficTimeBar";
 import { WorkRangeControls } from "./WorkRangeControls";
 import { RestrictionControls } from "./RestrictionControls";
 import { TimingAssessment } from "./TimingAssessment";
 import { AddressRangeSelector } from "./AddressRangeSelector";
+import { ImpactSimulation } from "./ImpactSimulation";
 import type { RoadSelection, RoadSelectionAction } from "../domain/selection";
 import { snapToRoad } from "../domain/workRange";
 import { buildStraightRoadSection } from "../domain/corridor";
 import { formatTrafficTime, trafficDayLabel } from "../domain/traffic";
+import {
+  buildRoadNetwork,
+  type ImpactViewMode,
+  type NetworkSimulationResult,
+} from "../domain/networkSimulation";
 import type {
   LayerVisibility,
   MapData,
@@ -87,6 +94,15 @@ export function MapView({
   const [attempt, setAttempt] = useState(0);
   const [guideMinimized, setGuideMinimized] = useState(false);
   const [addressEntryOpen, setAddressEntryOpen] = useState(false);
+  const [durationIntervals, setDurationIntervals] = useState(4);
+  const [simulationResult, setSimulationResult] =
+    useState<NetworkSimulationResult | null>(null);
+  const [impactViewMode, setImpactViewMode] =
+    useState<ImpactViewMode>("baseline");
+  const roadNetwork = useMemo(
+    () => (data ? buildRoadNetwork(data.road_lanes) : null),
+    [data],
+  );
 
   useEffect(() => {
     settings.current = {
@@ -306,6 +322,27 @@ export function MapView({
 
   useEffect(() => {
     if (!ready || !mapRef.current) return;
+    syncSimulationImpact(mapRef.current, simulationResult, impactViewMode);
+  }, [ready, simulationResult, impactViewMode]);
+
+  useEffect(() => {
+    setSimulationResult(null);
+    setImpactViewMode("baseline");
+  }, [
+    selectedRoad?.properties.osm_id,
+    selection.range.start?.distance,
+    selection.range.end?.distance,
+    selection.restrictions.access,
+    selection.restrictions.closedLanes,
+    selection.restrictions.speedEnabled,
+    selection.restrictions.speedKmh,
+    trafficTime,
+    trafficDayType,
+    durationIntervals,
+  ]);
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return;
     mapRef.current.easeTo(
       mode === "3d"
         ? { pitch: 58, bearing: -22, zoom: 15, duration: 900 }
@@ -399,7 +436,9 @@ export function MapView({
             <div className="work-range-address">
               <div className="work-range-address-heading">
                 <div>
-                  <b>Exact address range <span>Optional</span></b>
+                  <b>
+                    Exact address range <span>Optional</span>
+                  </b>
                   <small>
                     Your map-selected A / B range is already ready to use.
                   </small>
@@ -430,7 +469,21 @@ export function MapView({
             dayType={trafficDayType}
             onTimeChange={onTrafficTimeChange}
             onDayTypeChange={onTrafficDayTypeChange}
+            onDurationIntervalsChange={setDurationIntervals}
           />
+          {planningWorkZone && roadNetwork && (
+            <ImpactSimulation
+              network={roadNetwork}
+              selection={selection}
+              timeIndex={trafficTime}
+              dayType={trafficDayType}
+              durationIntervals={durationIntervals}
+              result={simulationResult}
+              viewMode={impactViewMode}
+              onResultChange={setSimulationResult}
+              onViewModeChange={setImpactViewMode}
+            />
+          )}
         </div>
       )}
       {selectedRoad && planningWorkZone && guideMinimized && ready && (
@@ -445,26 +498,49 @@ export function MapView({
         </button>
       )}
       <div className="map-overlay traffic-legend">
-        <span>
-          <i style={{ background: "#2ca25f" }} />
-          Low load
-        </span>
-        <span>
-          <i style={{ background: "#f6d743" }} />
-          Moderate load
-        </span>
-        <span>
-          <i style={{ background: "#f28e2b" }} />
-          High load
-        </span>
-        <span>
-          <i style={{ background: "#d73027" }} />
-          Near / over capacity
-        </span>
-        <span>
-          <i style={{ background: "#87959b" }} />
-          No estimate
-        </span>
+        {simulationResult && impactViewMode === "difference" ? (
+          <>
+            <span>
+              <i style={{ background: "#8835ba" }} />
+              Work zone
+            </span>
+            <span>
+              <i style={{ background: "#268bd2" }} />
+              Detour
+            </span>
+            <span>
+              <i style={{ background: "#f28e2b" }} />
+              High increase
+            </span>
+            <span>
+              <i style={{ background: "#d73027" }} />
+              New bottleneck
+            </span>
+          </>
+        ) : (
+          <>
+            <span>
+              <i style={{ background: "#2ca25f" }} />
+              Low load
+            </span>
+            <span>
+              <i style={{ background: "#f6d743" }} />
+              Moderate load
+            </span>
+            <span>
+              <i style={{ background: "#f28e2b" }} />
+              High load
+            </span>
+            <span>
+              <i style={{ background: "#d73027" }} />
+              Near / over capacity
+            </span>
+            <span>
+              <i style={{ background: "#87959b" }} />
+              No estimate
+            </span>
+          </>
+        )}
       </div>
       <TrafficTimeBar
         value={trafficTime}
